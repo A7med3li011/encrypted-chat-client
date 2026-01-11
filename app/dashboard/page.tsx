@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useChatStore } from "@/lib/store/useChatStore";
@@ -15,13 +15,7 @@ import ChatInterface from "@/components/chat/ChatInterface";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const {
-    user = {
-      userName: "ahmed",
-    },
-    isAuthenticated,
-    clearAuth,
-  } = useAuthStore();
+  const { user, isAuthenticated, clearAuth } = useAuthStore();
   const {
     conversations,
     currentConversation,
@@ -34,8 +28,9 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
+    console.log(isAuthenticated);
     if (!isAuthenticated) {
-      router.push("/auth/login");
+      // router.push("/auth/login");
       return;
     }
 

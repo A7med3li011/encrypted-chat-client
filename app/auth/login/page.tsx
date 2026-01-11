@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { authApi } from '@/lib/api/auth';
-import { usersApi } from '@/lib/api/users';
+import { handleLogin } from '@/lib/action/auth.action';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import Link from 'next/link';
 import { Lock, LogIn, AlertCircle } from 'lucide-react';
@@ -28,21 +27,37 @@ export default function LoginPage() {
       // Trim and normalize the recovery password
       const normalizedPassword = recoveryPassword.trim().replace(/\s+/g, ' ');
 
-      // Login
-      const response = await authApi.login({ recoveryPassword: normalizedPassword });
+      // Login using server action
+      const response = await handleLogin({ recoveryPassword: normalizedPassword });
 
-      // Get user profile
-      const userProfile = await usersApi.getProfile();
+      if (!response.success) {
+        setError(response.error?.message || 'Login failed. Please check your recovery password.');
+        return;
+      }
 
-      // Set auth state
-      setAuth(response.token, userProfile.data);
+      // Set auth state with tokens and user data
+      // Note: Login response doesn't include recoveryPassword or recoveryPasswordQR
+      if (response.accessToken && response.refreshToken) {
+        setAuth(
+          response.accessToken,
+          response.refreshToken,
+          {
+            _id: response.data._id || "",
+            accountId: response.data.accountId,
+            userName: response.data.userName,
+            role: "user",
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        );
+      }
 
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (err: any) {
       setError(
-        err.response?.data?.message ||
-          'Login failed. Please check your recovery password.'
+        err.message || 'Login failed. Please check your recovery password.'
       );
     } finally {
       setIsLoading(false);

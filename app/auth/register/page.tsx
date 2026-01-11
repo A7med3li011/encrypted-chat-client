@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
-import { authApi } from "@/lib/api/auth";
 import { useAuthStore } from "@/lib/store/useAuthStore";
-import { usersApi } from "@/lib/api/users";
 import Link from "next/link";
 import { Lock, UserPlus, AlertCircle } from "lucide-react";
+import { handleRegister } from "@/lib/action/auth.action";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -48,27 +47,45 @@ export default function RegisterPage() {
 
     try {
       // Register user
-      console.log(formData);
-      const response = await authApi.register(formData);
+      const response = await handleRegister(formData);
 
-      // Set auth state
-      setAuth(response.token, await usersApi.getProfile().then((r) => r.data));
+      if (!response.success) {
+        setError(response.error?.message || "Registration failed. Please try again.");
+        return;
+      }
 
-      // Get recovery credentials
-      const recoveryResponse = await authApi.getRecoveryCredentials();
-
+      // Set registration data for display (includes recovery password and QR codes)
       setRegistrationData({
         accountId: response.data.accountId,
         accountIdQR: response.data.accountIdQR,
-        recoveryPassword: recoveryResponse.data.recoveryPassword,
-        recoveryPasswordQR: recoveryResponse.data.recoveryPasswordQR,
+        recoveryPassword: response.data.recoveryPassword,
+        recoveryPasswordQR: response.data.recoveryPasswordQR,
       });
 
+      // Set auth state with tokens and user data
+      if (response.accessToken && response.refreshToken) {
+        setAuth(
+          response.accessToken,
+          response.refreshToken,
+          {
+            _id: response.data._id || "",
+            accountId: response.data.accountId,
+            userName: response.data.userName,
+            location: formData.location,
+            deviceType: formData.deviceType,
+            role: "user",
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        );
+      }
+
+      // Show success modal
       setShowSuccess(true);
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
+      console.error("Registration error:", err);
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

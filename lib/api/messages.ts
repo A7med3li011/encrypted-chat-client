@@ -1,4 +1,26 @@
-import apiClient from './axios';
+const API_BASE_URL = "http://localhost:3003/api/v1";
+
+// Helper function to get token from localStorage
+const getToken = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  return null;
+};
+
+// Helper function to create headers
+const getHeaders = (): HeadersInit => {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  const token = getToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+};
 
 export interface Message {
   _id: string;
@@ -35,24 +57,49 @@ export const messagesApi = {
     data: Message;
     message: string;
   }> => {
-    const response = await apiClient.post('/messages', data);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/messages`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to send message: ${response.statusText}`);
+    }
+
+    return response.json();
   },
 
   getConversationMessages: async (conversationId: string): Promise<{
     success: boolean;
     data: Message[];
   }> => {
-    const response = await apiClient.get(`/messages/conversation/${conversationId}`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/messages/conversation/${conversationId}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get messages: ${response.statusText}`);
+    }
+
+    return response.json();
   },
 
   getUnreadCount: async (): Promise<{
     success: boolean;
     data: { count: number };
   }> => {
-    const response = await apiClient.get('/messages/unread');
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/messages/unread`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get unread count: ${response.statusText}`);
+    }
+
+    return response.json();
   },
 
   updateMessageStatus: async (
@@ -62,17 +109,32 @@ export const messagesApi = {
     success: boolean;
     data: Message;
   }> => {
-    const response = await apiClient.patch(`/messages/${messageId}/status`, {
-      status,
+    const response = await fetch(`${API_BASE_URL}/messages/${messageId}/status`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({ status }),
     });
-    return response.data;
+
+    if (!response.ok) {
+      throw new Error(`Failed to update message status: ${response.statusText}`);
+    }
+
+    return response.json();
   },
 
   deleteMessage: async (messageId: string): Promise<{
     success: boolean;
     message: string;
   }> => {
-    const response = await apiClient.delete(`/messages/${messageId}`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/messages/${messageId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete message: ${response.statusText}`);
+    }
+
+    return response.json();
   },
 };

@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3003/api/v1";
+const API_BASE_URL = "${process.env.NEXT_PUBLIC_API_URL}";
 
 // Helper function to get token from localStorage
 const getToken = (): string | null => {
@@ -37,8 +37,8 @@ export interface Message {
   };
   content: string;
   encryptedContent?: string;
-  messageType: 'text' | 'image' | 'file' | 'audio' | 'video';
-  status: 'sent' | 'delivered' | 'read';
+  messageType: "text" | "image" | "file" | "audio" | "video";
+  status: "sent" | "delivered" | "read";
   readAt?: string;
   deliveredAt?: string;
   createdAt: string;
@@ -48,11 +48,13 @@ export interface Message {
 export interface SendMessageData {
   conversationId: string;
   content: string;
-  messageType?: 'text' | 'image' | 'file' | 'audio' | 'video';
+  messageType?: "text" | "image" | "file" | "audio" | "video";
 }
 
 export const messagesApi = {
-  sendMessage: async (data: SendMessageData): Promise<{
+  sendMessage: async (
+    data: SendMessageData
+  ): Promise<{
     success: boolean;
     data: Message;
     message: string;
@@ -70,14 +72,19 @@ export const messagesApi = {
     return response.json();
   },
 
-  getConversationMessages: async (conversationId: string): Promise<{
+  getConversationMessages: async (
+    conversationId: string
+  ): Promise<{
     success: boolean;
     data: Message[];
   }> => {
-    const response = await fetch(`${API_BASE_URL}/messages/conversation/${conversationId}`, {
-      method: "GET",
-      headers: getHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/messages/conversation/${conversationId}`,
+      {
+        method: "GET",
+        headers: getHeaders(),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to get messages: ${response.statusText}`);
@@ -104,25 +111,32 @@ export const messagesApi = {
 
   updateMessageStatus: async (
     messageId: string,
-    status: 'delivered' | 'read'
+    status: "delivered" | "read"
   ): Promise<{
     success: boolean;
     data: Message;
   }> => {
-    const response = await fetch(`${API_BASE_URL}/messages/${messageId}/status`, {
-      method: "PATCH",
-      headers: getHeaders(),
-      body: JSON.stringify({ status }),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/messages/${messageId}/status`,
+      {
+        method: "PATCH",
+        headers: getHeaders(),
+        body: JSON.stringify({ status }),
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`Failed to update message status: ${response.statusText}`);
+      throw new Error(
+        `Failed to update message status: ${response.statusText}`
+      );
     }
 
     return response.json();
   },
 
-  deleteMessage: async (messageId: string): Promise<{
+  deleteMessage: async (
+    messageId: string
+  ): Promise<{
     success: boolean;
     message: string;
   }> => {

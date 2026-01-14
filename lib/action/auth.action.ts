@@ -28,8 +28,6 @@ interface AuthResponse {
 
 interface ActionResponse {
   data: any;
-  accessToken?: string;
-  refreshToken?: string;
   message?: string;
   success: boolean;
   error: {
@@ -38,19 +36,25 @@ interface ActionResponse {
   } | null;
 }
 
-export async function handleRegister(data: RegisterData): Promise<ActionResponse> {
+export async function handleRegister(
+  data: RegisterData
+): Promise<ActionResponse> {
   const cookiee = await cookies();
   try {
-    const response = await fetch(`http://localhost:3003/api/v1/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.ok) {
       const result = await response.json();
+      console.log(result, "herer");
       return {
         data: null,
         success: false,
@@ -63,7 +67,8 @@ export async function handleRegister(data: RegisterData): Promise<ActionResponse
     }
 
     const result: AuthResponse = await response.json();
-
+    console.log(result);
+    // Store tokens in HTTP-only cookies (secure, not accessible via JavaScript)
     cookiee.set("accessToken", result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -80,8 +85,6 @@ export async function handleRegister(data: RegisterData): Promise<ActionResponse
 
     return {
       data: result.data || {},
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
       message: result.message,
       success: true,
       error: null,
@@ -102,13 +105,16 @@ export async function handleRegister(data: RegisterData): Promise<ActionResponse
 export async function handleLogin(data: LoginData): Promise<ActionResponse> {
   const cookiee = await cookies();
   try {
-    const response = await fetch(`http://localhost:3003/api/v1/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.ok) {
       const result = await response.json();
@@ -125,11 +131,12 @@ export async function handleLogin(data: LoginData): Promise<ActionResponse> {
 
     const result: AuthResponse = await response.json();
 
+    // Store tokens in HTTP-only cookies (secure, not accessible via JavaScript)
     cookiee.set("accessToken", result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 60 * 15, // 15 minutes
+      maxAge: 60 * 15 * 60, // 15 minutes
     });
 
     cookiee.set("refreshToken", result.refreshToken, {
@@ -141,8 +148,104 @@ export async function handleLogin(data: LoginData): Promise<ActionResponse> {
 
     return {
       data: result.data || {},
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+      message: result.message,
+      success: true,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
+        status: 500,
+      },
+    };
+  }
+}
+
+export async function handleLogout() {
+  const token = (await cookies()).get("accessToken")?.value || "";
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    await (await cookies()).delete("accessToken");
+    await (await cookies()).delete("refreshToken");
+    if (!response.ok) {
+      const result = await response.json();
+      return {
+        data: null,
+        success: false,
+        message: result.message,
+        error: {
+          message: `Failed to logout: ${response.statusText}`,
+          status: response.status,
+        },
+      };
+    }
+
+    const result = await response.json();
+
+    return {
+      data: result.data || null,
+      message: result.message,
+      success: true,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
+        status: 500,
+      },
+    };
+  }
+}
+export async function handlegetProfile() {
+  const token = (await cookies()).get("accessToken")?.value || "";
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/users/profile`,
+      {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const result = await response.json();
+      return {
+        data: null,
+        success: false,
+        message: result.message,
+        error: {
+          message: `Failed to logout: ${response.statusText}`,
+          status: response.status,
+        },
+      };
+    }
+
+    const result = await response.json();
+
+    return {
+      data: result.data || null,
       message: result.message,
       success: true,
       error: null,

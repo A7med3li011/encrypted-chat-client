@@ -1,17 +1,25 @@
 "use client";
 
-import  { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useChatStore } from "@/lib/store/useChatStore";
-import { conversationsApi, Conversation } from "@/lib/api/conversations";
-import { ConversationList } from "@/components/dashboard/ConversationList";
+
 import { StartConversationModal } from "@/components/dashboard/StartConversationModal";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { MessageSquarePlus, LogOut, User, RefreshCw } from "lucide-react";
-import { authApi } from "@/lib/api/auth";
+
 import ChatInterface from "@/components/chat/ChatInterface";
+import { ConversationList } from "@/components/dashboard/ConversationList";
+import {
+  getAllMyConversations,
+  DeleteConversations,
+} from "@/lib/action/conversation.action";
+import { handleLogout as logoutAction } from "@/lib/action/auth.action";
+import { Conversation } from "@/lib/types/conversation";
+import { useToast } from "@/components/ui/Toast";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -22,27 +30,45 @@ export default function DashboardPage() {
     setConversations,
     setCurrentConversation,
   } = useChatStore();
+  const { showToast } = useToast();
 
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [showStartConversation, setShowStartConversation] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<
+    string | null
+  >(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
+  // Load conversations on mount
   useEffect(() => {
-    console.log(isAuthenticated);
-    if (!isAuthenticated) {
-      // router.push("/auth/login");
-      return;
-    }
-
     loadConversations();
-  }, [isAuthenticated, router]);
+  }, []);
 
   const loadConversations = async () => {
+    setIsLoadingConversations(true);
+    setError("");
+
     try {
-      const response = await conversationsApi.getConversations();
-      setConversations(response.data);
-    } catch (error) {
-      console.error("Failed to load conversations:", error);
+      const response = await getAllMyConversations("1", "50");
+
+      if (!response.success) {
+        setError(response.message || "Failed to load conversations");
+        setConversations([]);
+        return;
+      }
+
+      // Handle the response data structure - data is an array of conversations
+      const conversationsData = Array.isArray(response.data)
+        ? response.data
+        : [];
+      setConversations(conversationsData);
+    } catch (err) {
+      console.error("Error loading conversations:", err);
+      setError("Failed to load conversations");
+      setConversations([]);
     } finally {
       setIsLoadingConversations(false);
     }
@@ -56,10 +82,19 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     try {
-      await authApi.logout();
+      const response = await logoutAction();
+
+      if (!response.success) {
+        showToast(response.error?.message || "Failed to logout", "error");
+        return;
+      }
+
+      showToast(response.message || "Logged out successfully", "success");
+      clearAuth();
+      router.push("/auth/login");
     } catch (error) {
       console.error("Logout error:", error);
-    } finally {
+      showToast("Failed to logout", "error");
       clearAuth();
       router.push("/auth/login");
     }
@@ -71,6 +106,45 @@ export default function DashboardPage() {
 
   const handleStartConversationSuccess = () => {
     loadConversations();
+  };
+
+  const handleDeleteConversation = (conversationId: string) => {
+    setConversationToDelete(conversationId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
+
+    setIsDeleting(true);
+
+    try {
+      const response = await DeleteConversations(conversationToDelete);
+
+      if (!response.success) {
+        showToast(response.message || "Failed to delete conversation", "error");
+        setIsDeleting(false);
+        return;
+      }
+
+      // If the deleted conversation was selected, clear it
+      if (currentConversation?._id === conversationToDelete) {
+        setCurrentConversation(null);
+      }
+
+      showToast("Conversation deleted successfully", "success");
+
+      // Reload conversations to update the list
+      await loadConversations();
+
+      setShowDeleteConfirm(false);
+      setConversationToDelete(null);
+    } catch (err) {
+      console.error("Error deleting conversation:", err);
+      showToast("Failed to delete conversation", "error");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -161,11 +235,23 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                   </div>
+                ) : error ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-red-600 dark:text-red-400">
+                    <p className="text-center mb-4">{error}</p>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={loadConversations}
+                    >
+                      Try Again
+                    </Button>
+                  </div>
                 ) : (
                   <ConversationList
                     conversations={conversations}
                     selectedConversationId={currentConversation?._id}
                     onSelectConversation={handleSelectConversation}
+                    onDeleteConversation={handleDeleteConversation}
                   />
                 )}
               </CardBody>
@@ -200,6 +286,21 @@ export default function DashboardPage() {
         isOpen={showStartConversation}
         onClose={() => setShowStartConversation(false)}
         onSuccess={handleStartConversationSuccess}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setConversationToDelete(null);
+        }}
+        onConfirm={confirmDeleteConversation}
+        title="Delete Conversation"
+        message="Are you sure you want to delete this conversation? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

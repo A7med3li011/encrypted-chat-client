@@ -32,16 +32,19 @@ A secure, modern Next.js frontend for the Encrypted Chat application with end-to
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Create a `.env.local` file:
+
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3003/api/v1
+NEXT_PUBLIC_API_URL=${process.env.NEXT_PUBLIC_API_URL}
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```

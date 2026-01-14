@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +11,26 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 import Link from "next/link";
 import { Lock, UserPlus, AlertCircle } from "lucide-react";
 import { handleRegister } from "@/lib/action/auth.action";
+
+// Helper function to detect device type from user agent
+const getDeviceType = (): string => {
+  const ua = navigator.userAgent;
+
+  // Mobile devices
+  if (/iPhone/i.test(ua)) return "iPhone";
+  if (/iPad/i.test(ua)) return "iPad";
+  if (/Android/i.test(ua)) {
+    if (/Mobile/i.test(ua)) return "Android Mobile";
+    return "Android Tablet";
+  }
+
+  // Desktop OS
+  if (/Macintosh|Mac OS X/i.test(ua)) return "Mac";
+  if (/Windows NT/i.test(ua)) return "Windows PC";
+  if (/Linux/i.test(ua)) return "Linux";
+
+  return "Unknown Device";
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,6 +51,78 @@ export default function RegisterPage() {
     recoveryPassword: string;
     recoveryPasswordQR: string;
   } | null>(null);
+
+  // Auto-detect location and device type on component mount
+  useEffect(() => {
+    // Detect device type
+    const deviceType = getDeviceType();
+
+    // Get location using Geolocation API
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            // Use reverse geocoding to get location name
+            const { latitude, longitude } = position.coords;
+
+            // Call reverse geocoding API to get readable location
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+              {
+                headers: {
+                  'User-Agent': 'EncryptionChatApp/1.0'
+                }
+              }
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              const address = data.address;
+
+              // Build a readable location string (City, Country)
+              const city = address.city || address.town || address.village || address.county;
+              const country = address.country;
+              const locationString = city && country ? `${city}, ${country}` : `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+              setFormData((prev) => ({
+                ...prev,
+                location: locationString,
+                deviceType: deviceType,
+              }));
+            } else {
+              // Fallback to coordinates if geocoding fails
+              setFormData((prev) => ({
+                ...prev,
+                location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+                deviceType: deviceType,
+              }));
+            }
+          } catch (error) {
+            console.error("Error getting location name:", error);
+            setFormData((prev) => ({
+              ...prev,
+              location: "Location unavailable",
+              deviceType: deviceType,
+            }));
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setFormData((prev) => ({
+            ...prev,
+            location: "Location unavailable",
+            deviceType: deviceType,
+          }));
+        }
+      );
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        location: "Geolocation not supported",
+        deviceType: deviceType,
+      }));
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -62,24 +154,19 @@ export default function RegisterPage() {
         recoveryPasswordQR: response.data.recoveryPasswordQR,
       });
 
-      // Set auth state with tokens and user data
-      if (response.accessToken && response.refreshToken) {
-        setAuth(
-          response.accessToken,
-          response.refreshToken,
-          {
-            _id: response.data._id || "",
-            accountId: response.data.accountId,
-            userName: response.data.userName,
-            location: formData.location,
-            deviceType: formData.deviceType,
-            role: "user",
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }
-        );
-      }
+      // Set auth state with user data
+      // Tokens are stored in HTTP-only cookies on the server side
+      setAuth({
+        _id: response.data._id || "",
+        accountId: response.data.accountId,
+        userName: response.data.userName,
+        location: formData.location,
+        deviceType: formData.deviceType,
+        role: "user",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
       // Show success modal
       setShowSuccess(true);
@@ -137,25 +224,17 @@ export default function RegisterPage() {
               required
             />
 
-            <Input
-              label="Location"
-              name="location"
-              type="text"
-              placeholder="Enter your location"
-              value={formData.location}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              label="Device Type"
-              name="deviceType"
-              type="text"
-              placeholder="e.g., iPhone 15, Windows PC"
-              value={formData.deviceType}
-              onChange={handleChange}
-              required
-            />
+            {/* Auto-detected information */}
+            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <p>
+                <span className="font-medium">Device:</span>{" "}
+                {formData.deviceType || "Detecting..."}
+              </p>
+              <p>
+                <span className="font-medium">Location:</span>{" "}
+                {formData.location || "Detecting..."}
+              </p>
+            </div>
 
             <Button
               type="submit"

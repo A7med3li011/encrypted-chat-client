@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3003/api/v1";
+const API_BASE_URL = "${process.env.NEXT_PUBLIC_API_URL}";
 
 // Helper function to get token from localStorage
 const getToken = (): string | null => {
@@ -28,7 +28,7 @@ export interface User {
   userName: string;
   location?: string;
   deviceType?: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
   isActive: boolean;
   profilePic?: string;
   lastLoginAt?: string;
@@ -87,7 +87,10 @@ export const usersApi = {
     return response.json();
   },
 
-  deactivateAccount: async (): Promise<{ success: boolean; message: string }> => {
+  deactivateAccount: async (): Promise<{
+    success: boolean;
+    message: string;
+  }> => {
     const response = await fetch(`${API_BASE_URL}/users/deactivate`, {
       method: "DELETE",
       headers: getHeaders(),

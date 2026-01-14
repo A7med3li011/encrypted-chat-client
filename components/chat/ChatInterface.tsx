@@ -1,20 +1,22 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useRef } from 'react';
-import { Card, CardBody, CardHeader } from '../ui/Card';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
-import { useChatStore } from '@/lib/store/useChatStore';
-import { useAuthStore } from '@/lib/store/useAuthStore';
-import { messagesApi, Message } from '@/lib/api/messages';
-import { MessageBubble } from './MessageBubble';
-import { Send, Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useRef } from "react";
+import { Card, CardBody, CardHeader } from "../ui/Card";
+import { Input } from "../ui/Input";
+import { Button } from "../ui/Button";
+import { useChatStore } from "@/lib/store/useChatStore";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { getMessages, sendMessage } from "@/lib/action/chat.action";
+import { MessageBubble } from "./MessageBubble";
+import { Send, Loader2 } from "lucide-react";
 
 export default function ChatInterface() {
-  const { currentConversation, messages, setMessages, addMessage } = useChatStore();
+  const { currentConversation, messages, setMessages, addMessage } =
+    useChatStore();
   const user = useAuthStore((state) => state.user);
+  console.log("Current Conversation:", messages);
 
-  const [messageText, setMessageText] = useState('');
+  const [messageText, setMessageText] = useState("");
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -30,7 +32,7 @@ export default function ChatInterface() {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const loadMessages = async () => {
@@ -38,12 +40,15 @@ export default function ChatInterface() {
 
     setIsLoadingMessages(true);
     try {
-      const response = await messagesApi.getConversationMessages(
-        currentConversation._id
-      );
-      setMessages(response.data);
+      const response = await getMessages(currentConversation._id);
+      console.log(response, "res");
+      if (response.success && response.data) {
+        setMessages(response.data || []);
+      } else {
+        console.error("Failed to load messages:", response.error?.message);
+      }
     } catch (error) {
-      console.error('Failed to load messages:', error);
+      console.error("Failed to load messages:", error);
     } finally {
       setIsLoadingMessages(false);
     }
@@ -56,18 +61,19 @@ export default function ChatInterface() {
 
     setIsSending(true);
     const tempMessage = messageText;
-    setMessageText('');
+    setMessageText("");
 
     try {
-      const response = await messagesApi.sendMessage({
-        conversationId: currentConversation._id,
-        content: tempMessage,
-        messageType: 'text',
-      });
+      const response = await sendMessage(currentConversation._id, tempMessage);
 
-      addMessage(response.data);
+      if (response.success && response.data) {
+        addMessage(response.data);
+      } else {
+        console.error("Failed to send message:", response.error?.message);
+        setMessageText(tempMessage);
+      }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
       setMessageText(tempMessage);
     } finally {
       setIsSending(false);
@@ -75,7 +81,9 @@ export default function ChatInterface() {
   };
 
   const getOtherParticipant = () => {
-    return currentConversation?.participants.find((p) => p._id !== user?._id);
+    return currentConversation?.participants.find(
+      (p) => p.accountId !== user?.accountId
+    );
   };
 
   const otherParticipant = getOtherParticipant();
@@ -90,15 +98,15 @@ export default function ChatInterface() {
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-            {otherParticipant?.userName?.charAt(0).toUpperCase() || '?'}
+            {otherParticipant?.userName?.charAt(0).toUpperCase() || "?"}
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-              {otherParticipant?.userName || 'Unknown User'}
+              {otherParticipant?.userName || "Unknown User"}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            {/* <p className="text-sm text-gray-600 dark:text-gray-400">
               {otherParticipant?.accountId}
-            </p>
+            </p> */}
           </div>
         </div>
       </CardHeader>
@@ -119,7 +127,7 @@ export default function ChatInterface() {
               <MessageBubble
                 key={message._id}
                 message={message}
-                isOwn={message.senderId._id === user?._id}
+                isOwn={message.senderId.accountId === user?.accountId}
               />
             ))}
             <div ref={messagesEndRef} />

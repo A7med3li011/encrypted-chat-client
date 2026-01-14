@@ -35,23 +35,17 @@ export default function LoginPage() {
         return;
       }
 
-      // Set auth state with tokens and user data
-      // Note: Login response doesn't include recoveryPassword or recoveryPasswordQR
-      if (response.accessToken && response.refreshToken) {
-        setAuth(
-          response.accessToken,
-          response.refreshToken,
-          {
-            _id: response.data._id || "",
-            accountId: response.data.accountId,
-            userName: response.data.userName,
-            role: "user",
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }
-        );
-      }
+      // Set auth state with user data
+      // Tokens are stored in HTTP-only cookies on the server side
+      setAuth({
+        _id: response.data._id || "",
+        accountId: response.data.accountId,
+        userName: response.data.userName,
+        role: "user",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
       // Redirect to dashboard
       router.push('/dashboard');

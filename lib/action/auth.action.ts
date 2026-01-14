@@ -54,7 +54,7 @@ export async function handleRegister(
 
     if (!response.ok) {
       const result = await response.json();
-      console.log(result, "herer");
+
       return {
         data: null,
         success: false,
@@ -67,7 +67,7 @@ export async function handleRegister(
     }
 
     const result: AuthResponse = await response.json();
-    console.log(result);
+
     // Store tokens in HTTP-only cookies (secure, not accessible via JavaScript)
     cookiee.set("accessToken", result.accessToken, {
       httpOnly: true,
@@ -261,4 +261,10 @@ export async function handlegetProfile() {
       },
     };
   }
+}
+
+// Server action to get access token from HTTP-only cookie for socket connection
+export async function getAccessToken(): Promise<string | null> {
+  const token = (await cookies()).get("accessToken")?.value || null;
+  return token;
 }

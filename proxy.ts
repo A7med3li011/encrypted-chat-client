@@ -6,7 +6,7 @@ export default async function proxy(req: NextRequest) {
   const cookiesData = await cookies();
   const token = cookiesData.get("accessToken")?.value;
 
-  console.log(pathName, "asdasdasddddddddddddddddddddddddddddd");
+
   const isUserRoute =
     pathName.includes("/dashboard") || pathName.includes("/profile");
 

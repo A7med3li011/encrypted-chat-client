@@ -15,9 +15,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwn,
 }) => {
-  console.log(message);
   const user = useAuthStore((state) => state.user);
-  console.log(user);
+
   const getStatusIcon = () => {
     if (!isOwn) return null;
 

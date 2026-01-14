@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { Conversation } from '../types/conversation';
-import { Message } from '../api/messages';
+import { create } from "zustand";
+import { Conversation } from "../types/conversation";
+import { Message } from "../api/messages";
 
 interface ChatState {
   conversations: Conversation[];
@@ -26,7 +26,16 @@ export const useChatStore = create<ChatState>((set) => ({
     set({ currentConversation: conversation }),
   setMessages: (messages) => set({ messages }),
   addMessage: (message) =>
-    set((state) => ({ messages: [...state.messages, message] })),
+    set((state) => {
+      // Check if message already exists (prevent duplicates)
+      const exists = state.messages.some((msg) => msg._id === message._id);
+
+      if (exists) {
+        return state;
+      }
+
+      return { messages: [...state.messages, message] };
+    }),
   updateMessage: (messageId, updates) =>
     set((state) => ({
       messages: state.messages.map((msg) =>

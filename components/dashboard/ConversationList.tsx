@@ -29,7 +29,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     }
   };
 
-  console.log(conversations, "convos");
   const getOtherParticipant = (conversation: Conversation) => {
     return conversation.participants.find(
       (p) => p.accountId !== user?.accountId

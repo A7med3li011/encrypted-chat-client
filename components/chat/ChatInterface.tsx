@@ -12,12 +12,15 @@ import { Send, Loader2 } from "lucide-react";
 import { useSocket } from "@/lib/hooks/useSocket";
 import { Message } from "@/lib/api/messages";
 
+const MESSAGES_PER_PAGE = 20;
+
 export default function ChatInterface() {
   const {
     currentConversation,
     messages,
     setMessages,
     addMessage,
+    prependMessages,
     updateMessage,
   } = useChatStore();
   const user = useAuthStore((state) => state.user);
@@ -30,8 +33,13 @@ export default function ChatInterface() {
   const [userPresence, setUserPresence] = useState<
     Record<string, "online" | "away" | "busy" | "offline">
   >({});
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousScrollHeightRef = useRef<number>(0);
 
   // Setup socket event listeners
   useEffect(() => {
@@ -113,13 +121,46 @@ export default function ChatInterface() {
 
   useEffect(() => {
     if (currentConversation) {
+      setPage(1);
+      setHasMore(true);
       loadMessages();
     }
   }, [currentConversation]);
 
+  // Handle scroll event for loading more messages
   useEffect(() => {
-    scrollToBottom();
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (container.scrollTop === 0 && hasMore && !isLoadingMore) {
+        loadMoreMessages();
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [hasMore, isLoadingMore]);
+
+  useEffect(() => {
+    // Only auto-scroll to bottom for new messages (not when loading more)
+    if (!isLoadingMore) {
+      scrollToBottom();
+    }
   }, [messages]);
+
+  // Maintain scroll position after loading more messages
+  useEffect(() => {
+    if (!isLoadingMore && previousScrollHeightRef.current > 0) {
+      const container = messagesContainerRef.current;
+      if (container) {
+        const newScrollHeight = container.scrollHeight;
+        const scrollDiff = newScrollHeight - previousScrollHeightRef.current;
+        container.scrollTop = scrollDiff;
+        previousScrollHeightRef.current = 0;
+      }
+    }
+  }, [isLoadingMore]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,11 +170,26 @@ export default function ChatInterface() {
     if (!currentConversation) return;
 
     setIsLoadingMessages(true);
+    console.log("📄 Loading initial messages - Page: 1, Limit:", MESSAGES_PER_PAGE);
+
     try {
-      const response = await getMessages(currentConversation._id);
+      const response = await getMessages(currentConversation._id, 1, MESSAGES_PER_PAGE);
 
       if (response.success && response.data) {
-        setMessages(response.data || []);
+        const messagesData = response.data.messages || response.data || [];
+        setMessages(messagesData);
+        setPage(1);
+
+        // Check if there are more messages
+        const totalMessages = response.data.total || messagesData.length;
+        setHasMore(messagesData.length < totalMessages);
+
+        console.log("✅ Initial messages loaded:", {
+          page: 1,
+          messagesLoaded: messagesData.length,
+          totalMessages,
+          hasMore: messagesData.length < totalMessages
+        });
       } else {
         console.error("Failed to load messages:", response.error?.message);
       }
@@ -141,6 +197,56 @@ export default function ChatInterface() {
       console.error("Failed to load messages:", error);
     } finally {
       setIsLoadingMessages(false);
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!currentConversation || isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+
+    console.log("📄 Loading more messages - Page:", nextPage, "Limit:", MESSAGES_PER_PAGE);
+
+    try {
+      // Store the current scroll height before loading new messages
+      if (messagesContainerRef.current) {
+        previousScrollHeightRef.current = messagesContainerRef.current.scrollHeight;
+      }
+
+      const response = await getMessages(currentConversation._id, nextPage, MESSAGES_PER_PAGE);
+
+      if (response.success && response.data) {
+        const newMessages = response.data.messages || response.data || [];
+
+        if (newMessages.length > 0) {
+          // Prepend new messages to the existing ones
+          prependMessages(newMessages);
+          setPage(nextPage);
+
+          // Check if there are more messages
+          const totalMessages = response.data.total || 0;
+          const currentTotal = messages.length + newMessages.length;
+          setHasMore(currentTotal < totalMessages);
+
+          console.log("✅ More messages loaded:", {
+            page: nextPage,
+            newMessagesLoaded: newMessages.length,
+            totalMessagesNow: currentTotal,
+            totalAvailable: totalMessages,
+            hasMore: currentTotal < totalMessages
+          });
+        } else {
+          setHasMore(false);
+          console.log("🏁 No more messages available");
+        }
+      } else {
+        console.error("Failed to load more messages:", response.error?.message);
+      }
+    } catch (error) {
+      console.error("Failed to load more messages:", error);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -309,7 +415,7 @@ export default function ChatInterface() {
       </CardHeader>
 
       {/* Messages Area */}
-      <CardBody className="flex-1 overflow-y-auto">
+      <CardBody className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
         {isLoadingMessages ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="animate-spin text-blue-600" size={32} />
@@ -320,6 +426,23 @@ export default function ChatInterface() {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Loading indicator for pagination */}
+            {isLoadingMore && (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="animate-spin text-blue-600" size={24} />
+                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                  Loading more messages...
+                </span>
+              </div>
+            )}
+            {/* Show "No more messages" indicator */}
+            {!hasMore && messages.length > 0 && (
+              <div className="flex items-center justify-center py-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  No more messages
+                </span>
+              </div>
+            )}
             {messages.map((message) => (
               <MessageBubble
                 key={message._id}

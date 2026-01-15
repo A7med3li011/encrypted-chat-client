@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 export async function getMessages(
   conversationId: string,
   page = 1,
-  limit = 50
+  limit = 10
 ) {
   const cookiee = await cookies();
   try {

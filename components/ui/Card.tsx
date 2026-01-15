@@ -30,12 +30,13 @@ export const CardHeader: React.FC<{ children: React.ReactNode; className?: strin
   );
 };
 
-export const CardBody: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = '',
-}) => {
-  return <div className={`px-6 py-4 ${className}`}>{children}</div>;
-};
+export const CardBody = React.forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string }>(
+  ({ children, className = '' }, ref) => {
+    return <div ref={ref} className={`px-6 py-4 ${className}`}>{children}</div>;
+  }
+);
+
+CardBody.displayName = 'CardBody';
 
 export const CardFooter: React.FC<{ children: React.ReactNode; className?: string }> = ({
   children,

@@ -11,6 +11,7 @@ interface ChatState {
   setCurrentConversation: (conversation: Conversation | null) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
+  prependMessages: (messages: Message[]) => void;
   updateMessage: (messageId: string, updates: Partial<Message>) => void;
   setUnreadCount: (count: number) => void;
   clearChat: () => void;
@@ -35,6 +36,16 @@ export const useChatStore = create<ChatState>((set) => ({
       }
 
       return { messages: [...state.messages, message] };
+    }),
+  prependMessages: (newMessages) =>
+    set((state) => {
+      // Filter out duplicates
+      const existingIds = new Set(state.messages.map((msg) => msg._id));
+      const uniqueNewMessages = newMessages.filter(
+        (msg) => !existingIds.has(msg._id)
+      );
+
+      return { messages: [...uniqueNewMessages, ...state.messages] };
     }),
   updateMessage: (messageId, updates) =>
     set((state) => ({

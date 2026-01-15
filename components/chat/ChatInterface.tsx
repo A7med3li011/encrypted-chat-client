@@ -12,7 +12,7 @@ import { Send, Loader2 } from "lucide-react";
 import { useSocket } from "@/lib/hooks/useSocket";
 import { Message } from "@/lib/api/messages";
 
-const MESSAGES_PER_PAGE = 20;
+const MESSAGES_PER_PAGE = 15;
 
 export default function ChatInterface() {
   const {
@@ -170,25 +170,35 @@ export default function ChatInterface() {
     if (!currentConversation) return;
 
     setIsLoadingMessages(true);
-    console.log("📄 Loading initial messages - Page: 1, Limit:", MESSAGES_PER_PAGE);
+    console.log(
+      "📄 Loading initial messages - Page: 1, Limit:",
+      MESSAGES_PER_PAGE
+    );
 
     try {
-      const response = await getMessages(currentConversation._id, 1, MESSAGES_PER_PAGE);
+      const response = await getMessages(
+        currentConversation._id,
+        1,
+        MESSAGES_PER_PAGE
+      );
 
       if (response.success && response.data) {
-        const messagesData = response.data.messages || response.data || [];
+        const messagesData = Array.isArray(response.data) ? response.data : [];
         setMessages(messagesData);
         setPage(1);
 
-        // Check if there are more messages
-        const totalMessages = response.data.total || messagesData.length;
-        setHasMore(messagesData.length < totalMessages);
+        // Check if there are more messages using pagination info
+        const pagination = response.pagination;
+        const totalMessages = pagination?.total || messagesData.length;
+        const totalPages = pagination?.pages || 1;
+        setHasMore(totalPages > 1);
 
         console.log("✅ Initial messages loaded:", {
           page: 1,
           messagesLoaded: messagesData.length,
           totalMessages,
-          hasMore: messagesData.length < totalMessages
+          totalPages,
+          hasMore: totalPages > 1,
         });
       } else {
         console.error("Failed to load messages:", response.error?.message);
@@ -206,35 +216,45 @@ export default function ChatInterface() {
     setIsLoadingMore(true);
     const nextPage = page + 1;
 
-    console.log("📄 Loading more messages - Page:", nextPage, "Limit:", MESSAGES_PER_PAGE);
+    console.log(
+      "📄 Loading more messages - Page:",
+      nextPage,
+      "Limit:",
+      MESSAGES_PER_PAGE
+    );
 
     try {
       // Store the current scroll height before loading new messages
       if (messagesContainerRef.current) {
-        previousScrollHeightRef.current = messagesContainerRef.current.scrollHeight;
+        previousScrollHeightRef.current =
+          messagesContainerRef.current.scrollHeight;
       }
 
-      const response = await getMessages(currentConversation._id, nextPage, MESSAGES_PER_PAGE);
+      const response = await getMessages(
+        currentConversation._id,
+        nextPage,
+        MESSAGES_PER_PAGE
+      );
 
       if (response.success && response.data) {
-        const newMessages = response.data.messages || response.data || [];
+        const newMessages = Array.isArray(response.data) ? response.data : [];
 
         if (newMessages.length > 0) {
           // Prepend new messages to the existing ones
           prependMessages(newMessages);
           setPage(nextPage);
 
-          // Check if there are more messages
-          const totalMessages = response.data.total || 0;
-          const currentTotal = messages.length + newMessages.length;
-          setHasMore(currentTotal < totalMessages);
+          // Check if there are more messages using pagination info
+          const pagination = response.pagination;
+          const totalPages = pagination?.pages || 1;
+          setHasMore(nextPage < totalPages);
 
           console.log("✅ More messages loaded:", {
             page: nextPage,
             newMessagesLoaded: newMessages.length,
-            totalMessagesNow: currentTotal,
-            totalAvailable: totalMessages,
-            hasMore: currentTotal < totalMessages
+            totalMessagesNow: messages.length + newMessages.length,
+            totalPages,
+            hasMore: nextPage < totalPages,
           });
         } else {
           setHasMore(false);
@@ -375,7 +395,7 @@ export default function ChatInterface() {
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-150 flex flex-col">
       {/* Chat Header */}
       <CardHeader className="shrink-0">
         <div className="flex items-center justify-between">
@@ -415,7 +435,10 @@ export default function ChatInterface() {
       </CardHeader>
 
       {/* Messages Area */}
-      <CardBody className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
+      <CardBody
+        className="flex-1 overflow-y-auto min-h-0"
+        ref={messagesContainerRef}
+      >
         {isLoadingMessages ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="animate-spin text-blue-600" size={32} />

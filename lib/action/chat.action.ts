@@ -34,10 +34,10 @@ export async function getMessages(
     }
 
     const result = await response.json();
-
+    console.log(result);
     return {
-      data: result.data || {},
-
+      data: result.data || [],
+      pagination: result.pagination || null,
       message: result.message,
       success: true,
       error: null,

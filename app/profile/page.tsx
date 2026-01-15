@@ -13,28 +13,47 @@ import {
   Smartphone,
   Key,
   AlertTriangle,
+  QrCode,
 } from "lucide-react";
 import { handlegetProfile } from "@/lib/action/auth.action";
+import Image from "next/image";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, clearAuth } = useAuthStore();
 
   const [showDeactivate, setShowDeactivate] = useState(false);
-
-  // useEffect(() => {
-  //   if (!isAuthenticated) {
-  //     router.push("/auth/login");
-  //   }
-  // }, [isAuthenticated, router]);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<{
+    deviceType: string;
+    location: string;
+    userName: string;
+    imageQr: string;
+    accountId: string;
+  } | null>(null);
 
   useEffect(() => {
-    async function geto() {
-      await handlegetProfile()
-        .then((res) => console.log(res, "progile"))
-        .catch((err) => console.log(err));
+    async function fetchProfile() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await handlegetProfile();
+        setUserData({
+          deviceType: res.data.deviceType,
+          location: res.data.location,
+          userName: res.data.userName,
+          imageQr: res.data.accountIdQR,
+          accountId: res.data.accountId,
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load profile");
+      } finally {
+        setIsLoading(false);
+      }
     }
-    geto();
+    fetchProfile();
   }, []);
 
   const handleDeactivate = () => {
@@ -79,62 +98,89 @@ export default function ProfilePage() {
               </h2>
             </CardHeader>
             <CardBody>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <User className="text-gray-400" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Username
-                    </p>
-                    <p className="text-gray-900 dark:text-gray-100">
-                      {user.userName}
-                    </p>
-                  </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <MapPin className="text-gray-400" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Location
-                    </p>
-                    <p className="text-gray-900 dark:text-gray-100">
-                      {user.location || "Not set"}
-                    </p>
-                  </div>
+              ) : error ? (
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-red-800 dark:text-red-200">{error}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.location.reload()}
+                    className="mt-2"
+                  >
+                    Try Again
+                  </Button>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <Smartphone className="text-gray-400" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Device Type
-                    </p>
-                    <p className="text-gray-900 dark:text-gray-100">
-                      {user.deviceType || "Not set"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              ) : userData ? (
+                <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Key className="text-gray-400" size={20} />
+                    <User className="text-gray-400" size={20} />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Account ID
+                        Username
                       </p>
-                      <p className="text-gray-900 dark:text-gray-100 font-mono">
-                        {user.accountId}
+                      <p className="text-gray-900 dark:text-gray-100">
+                        {userData.userName}
                       </p>
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-3">
+                    <MapPin className="text-gray-400" size={20} />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Location
+                      </p>
+                      <p className="text-gray-900 dark:text-gray-100">
+                        {userData.location || "Not set"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Smartphone className="text-gray-400" size={20} />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Device Type
+                      </p>
+                      <p className="text-gray-900 dark:text-gray-100">
+                        {userData.deviceType || "Not set"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <Key className="text-gray-400" size={20} />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Account ID
+                        </p>
+                        <p className="text-gray-900 dark:text-gray-100 font-mono text-sm break-all">
+                          {userData.accountId}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowQrCode(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <QrCode size={16} />
+                        Show QR
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </CardBody>
           </Card>
 
           {/* Danger Zone */}
-          <Card className="border-red-200 dark:border-red-800">
+          {/* <Card className="border-red-200 dark:border-red-800">
             <CardHeader className="bg-red-50 dark:bg-red-900/20">
               <h2 className="text-lg font-semibold text-red-900 dark:text-red-100 flex items-center gap-2">
                 <AlertTriangle size={20} />
@@ -150,12 +196,34 @@ export default function ProfilePage() {
                 Deactivate Account
               </Button>
             </CardBody>
-          </Card>
+          </Card> */}
         </div>
       </div>
 
-      {/* Deactivate Account Modal */}
+      {/* QR Code Modal */}
       <Modal
+        isOpen={showQrCode}
+        onClose={() => setShowQrCode(false)}
+        title="Account QR Code"
+      >
+        <div className="flex flex-col items-center gap-4">
+          {userData?.imageQr && (
+            <Image
+              src={`${userData.imageQr}`}
+              alt="Account QR Code"
+              width={256}
+              height={256}
+              className="w-64 h-64"
+            />
+          )}
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            Scan this QR code to share your account ID
+          </p>
+        </div>
+      </Modal>
+
+      {/* Deactivate Account Modal */}
+      {/* <Modal
         isOpen={showDeactivate}
         onClose={() => setShowDeactivate(false)}
         title="Deactivate Account"
@@ -188,7 +256,7 @@ export default function ProfilePage() {
             </Button>
           </div>
         </div>
-      </Modal>
+      </Modal> */}
     </div>
   );
 }

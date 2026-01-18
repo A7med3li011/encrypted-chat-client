@@ -10,7 +10,7 @@ import { getMessages, sendMessage } from "@/lib/action/chat.action";
 import { MessageBubble } from "./MessageBubble";
 import { Send, Loader2 } from "lucide-react";
 import { useSocket } from "@/lib/hooks/useSocket";
-import { Message } from "@/lib/api/messages";
+import { Message } from "@/lib/types/message";
 
 const MESSAGES_PER_PAGE = 15;
 
@@ -170,16 +170,12 @@ export default function ChatInterface() {
     if (!currentConversation) return;
 
     setIsLoadingMessages(true);
-    console.log(
-      "📄 Loading initial messages - Page: 1, Limit:",
-      MESSAGES_PER_PAGE
-    );
 
     try {
       const response = await getMessages(
         currentConversation._id,
         1,
-        MESSAGES_PER_PAGE
+        MESSAGES_PER_PAGE,
       );
 
       if (response.success && response.data) {
@@ -192,14 +188,6 @@ export default function ChatInterface() {
         const totalMessages = pagination?.total || messagesData.length;
         const totalPages = pagination?.pages || 1;
         setHasMore(totalPages > 1);
-
-        console.log("✅ Initial messages loaded:", {
-          page: 1,
-          messagesLoaded: messagesData.length,
-          totalMessages,
-          totalPages,
-          hasMore: totalPages > 1,
-        });
       } else {
         console.error("Failed to load messages:", response.error?.message);
       }
@@ -216,13 +204,6 @@ export default function ChatInterface() {
     setIsLoadingMore(true);
     const nextPage = page + 1;
 
-    console.log(
-      "📄 Loading more messages - Page:",
-      nextPage,
-      "Limit:",
-      MESSAGES_PER_PAGE
-    );
-
     try {
       // Store the current scroll height before loading new messages
       if (messagesContainerRef.current) {
@@ -233,7 +214,7 @@ export default function ChatInterface() {
       const response = await getMessages(
         currentConversation._id,
         nextPage,
-        MESSAGES_PER_PAGE
+        MESSAGES_PER_PAGE,
       );
 
       if (response.success && response.data) {
@@ -248,14 +229,6 @@ export default function ChatInterface() {
           const pagination = response.pagination;
           const totalPages = pagination?.pages || 1;
           setHasMore(nextPage < totalPages);
-
-          console.log("✅ More messages loaded:", {
-            page: nextPage,
-            newMessagesLoaded: newMessages.length,
-            totalMessagesNow: messages.length + newMessages.length,
-            totalPages,
-            hasMore: nextPage < totalPages,
-          });
         } else {
           setHasMore(false);
           console.log("🏁 No more messages available");
@@ -302,13 +275,13 @@ export default function ChatInterface() {
           } else {
             console.error(
               "❌ Failed to send message via socket:",
-              response.error
+              response.error,
             );
             // Fallback to HTTP
             sendViaHttp(currentConversation._id, tempMessage);
           }
           setIsSending(false);
-        }
+        },
       );
     } else {
       // Fallback to HTTP if socket is not connected
@@ -366,12 +339,12 @@ export default function ChatInterface() {
 
   const getOtherParticipant = () => {
     return currentConversation?.participants.find(
-      (p) => p.accountId !== user?.accountId
+      (p) => p.accountId !== user?.accountId,
     );
   };
 
   const getPresenceColor = (
-    status?: "online" | "away" | "busy" | "offline"
+    status?: "online" | "away" | "busy" | "offline",
   ) => {
     switch (status) {
       case "online":
@@ -407,7 +380,7 @@ export default function ChatInterface() {
               {otherParticipantStatus && (
                 <div
                   className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 ${getPresenceColor(
-                    otherParticipantStatus
+                    otherParticipantStatus,
                   )}`}
                 />
               )}

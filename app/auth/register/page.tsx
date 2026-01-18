@@ -70,9 +70,9 @@ export default function RegisterPage() {
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
               {
                 headers: {
-                  'User-Agent': 'EncryptionChatApp/1.0'
-                }
-              }
+                  "User-Agent": "EncryptionChatApp/1.0",
+                },
+              },
             );
 
             if (response.ok) {
@@ -80,9 +80,16 @@ export default function RegisterPage() {
               const address = data.address;
 
               // Build a readable location string (City, Country)
-              const city = address.city || address.town || address.village || address.county;
+              const city =
+                address.city ||
+                address.town ||
+                address.village ||
+                address.county;
               const country = address.country;
-              const locationString = city && country ? `${city}, ${country}` : `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+              const locationString =
+                city && country
+                  ? `${city}, ${country}`
+                  : `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
               setFormData((prev) => ({
                 ...prev,
@@ -101,7 +108,7 @@ export default function RegisterPage() {
             console.error("Error getting location name:", error);
             setFormData((prev) => ({
               ...prev,
-              location: "Location unavailable",
+              location: "",
               deviceType: deviceType,
             }));
           }
@@ -110,10 +117,10 @@ export default function RegisterPage() {
           console.error("Geolocation error:", error);
           setFormData((prev) => ({
             ...prev,
-            location: "Location unavailable",
+            location: "",
             deviceType: deviceType,
           }));
-        }
+        },
       );
     } else {
       setFormData((prev) => ({
@@ -134,15 +141,21 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
 
+    if (!formData.location) {
+      setError("please open location and refresh page");
+      return;
+    }
+    setIsLoading(true);
     try {
       // Register user
       const response = await handleRegister(formData);
 
       if (!response.success) {
-        setError(response.error?.message || "Registration failed. Please try again.");
+        setError(
+          response.error?.message || "Registration failed. Please try again.",
+        );
         return;
       }
 
@@ -215,7 +228,7 @@ export default function RegisterPage() {
             )}
 
             <Input
-              label="Username"
+              label=""
               name="userName"
               type="text"
               placeholder="Enter your username"
@@ -225,16 +238,6 @@ export default function RegisterPage() {
             />
 
             {/* Auto-detected information */}
-            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <p>
-                <span className="font-medium">Device:</span>{" "}
-                {formData.deviceType || "Detecting..."}
-              </p>
-              <p>
-                <span className="font-medium">Location:</span>{" "}
-                {formData.location || "Detecting..."}
-              </p>
-            </div>
 
             <Button
               type="submit"

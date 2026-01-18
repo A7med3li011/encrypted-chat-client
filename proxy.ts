@@ -29,7 +29,7 @@ export default async function proxy(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ refreshToken: refreshToken }),
-      }
+      },
     );
     const res = await data.json();
 

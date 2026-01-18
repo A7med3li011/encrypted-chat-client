@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Message } from "@/lib/api/messages";
+import { Message } from "@/lib/types/message";
 import { formatTime } from "@/lib/utils/dateUtils";
 import { Check, CheckCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/store/useAuthStore";

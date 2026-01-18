@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 export async function getMessages(
   conversationId: string,
   page = 1,
-  limit = 10
+  limit = 10,
 ) {
   const cookiee = await cookies();
   try {
@@ -17,7 +17,7 @@ export async function getMessages(
           authorization: `Bearer ${cookiee.get("accessToken")?.value}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -34,7 +34,7 @@ export async function getMessages(
     }
 
     const result = await response.json();
-    console.log(result);
+
     return {
       data: result.data || [],
       pagination: result.pagination || null,
@@ -66,12 +66,12 @@ export async function sendMessage(conversationId: string, content: string) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ conversationId, content, messageType: "text" }),
-      }
+      },
     );
 
     if (!response.ok) {
       const result = await response.json();
-      console.log("Error response:", result);
+
       return {
         data: null,
         success: false,

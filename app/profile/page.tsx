@@ -14,6 +14,9 @@ import {
   Key,
   AlertTriangle,
   QrCode,
+  Download,
+  Copy,
+  Check,
 } from "lucide-react";
 import { handlegetProfile } from "@/lib/action/auth.action";
 import Image from "next/image";
@@ -26,6 +29,7 @@ export default function ProfilePage() {
   const [showQrCode, setShowQrCode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [userData, setUserData] = useState<{
     deviceType: string;
     location: string;
@@ -59,6 +63,27 @@ export default function ProfilePage() {
   const handleDeactivate = () => {
     clearAuth();
     router.push("/auth/login");
+  };
+
+  const handleDownloadQr = () => {
+    if (!userData?.imageQr) return;
+    const link = document.createElement("a");
+    link.href = userData.imageQr;
+    link.download = `account-qr-${userData.accountId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCopyAccountId = async () => {
+    if (!userData?.accountId) return;
+    try {
+      await navigator.clipboard.writeText(userData.accountId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   if (!isAuthenticated || !user) {
@@ -219,6 +244,24 @@ export default function ProfilePage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
             Scan this QR code to share your account ID
           </p>
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="secondary"
+              onClick={handleDownloadQr}
+              className="flex-1 flex items-center justify-center gap-2"
+            >
+              <Download size={16} />
+              Download QR
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleCopyAccountId}
+              className="flex-1 flex items-center justify-center gap-2"
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? "Copied!" : "Copy ID"}
+            </Button>
+          </div>
         </div>
       </Modal>
 

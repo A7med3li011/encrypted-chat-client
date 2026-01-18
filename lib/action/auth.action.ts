@@ -37,7 +37,7 @@ interface ActionResponse {
 }
 
 export async function handleRegister(
-  data: RegisterData
+  data: RegisterData,
 ): Promise<ActionResponse> {
   const cookiee = await cookies();
   try {
@@ -49,7 +49,7 @@ export async function handleRegister(
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -113,7 +113,7 @@ export async function handleLogin(data: LoginData): Promise<ActionResponse> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -177,7 +177,7 @@ export async function handleLogout() {
           authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     await (await cookies()).delete("accessToken");
@@ -226,7 +226,7 @@ export async function handlegetProfile() {
           authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {

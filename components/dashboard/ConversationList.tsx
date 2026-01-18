@@ -31,7 +31,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   const getOtherParticipant = (conversation: Conversation) => {
     return conversation.participants.find(
-      (p) => p.accountId !== user?.accountId
+      (p) => p.accountId !== user?.accountId,
     );
   };
 
@@ -69,9 +69,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                       {otherParticipant?.userName || "Unknown User"}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {/* <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                       {conversation.lastMessage?.content || "No messages yet"}
-                    </p>
+                    </p> */}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-2">

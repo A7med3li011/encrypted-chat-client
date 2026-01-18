@@ -29,7 +29,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const svg = document.getElementById(`qr-${label}`);
     if (!svg) return;
 
@@ -38,19 +38,56 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     const ctx = canvas.getContext("2d");
     const img = new Image();
 
-    img.onload = () => {
+    img.onload = async () => {
       canvas.width = img.width;
       canvas.height = img.height;
       ctx?.drawImage(img, 0, 0);
-      const pngFile = canvas.toDataURL("image/png");
 
-      const downloadLink = document.createElement("a");
-      downloadLink.download = `${label}-qr-code.png`;
-      downloadLink.href = pngFile;
-      downloadLink.click();
+      // Check if iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      if (isIOS) {
+        // iOS: Convert to blob and open in new tab for user to long-press save
+        canvas.toBlob(async (blob) => {
+          if (!blob) return;
+
+          // Try Web Share API first (works well on iOS)
+          if (navigator.share && navigator.canShare) {
+            try {
+              const file = new File([blob], `${label}-qr-code.png`, { type: "image/png" });
+              if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                  files: [file],
+                  title: `${label} QR Code`,
+                });
+                return;
+              }
+            } catch (err) {
+              console.log("Share failed, falling back to new tab");
+            }
+          }
+
+          // Fallback: Open in new tab for long-press save
+          const blobUrl = URL.createObjectURL(blob);
+          window.open(blobUrl, "_blank");
+          // Clean up after a delay
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        }, "image/png");
+      } else {
+        // Non-iOS: Use standard download
+        const pngFile = canvas.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.download = `${label}-qr-code.png`;
+        downloadLink.href = pngFile;
+        downloadLink.click();
+      }
     };
 
-    img.src = "data:image/svg+xml;base64," + btoa(svgData);
+    img.onerror = () => {
+      console.error("Failed to load QR code image");
+    };
+
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   return (

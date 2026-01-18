@@ -1,16 +1,49 @@
 /** @type {import('next').NextConfig} */
 const withPWA = require("next-pwa")({
   dest: "public",
-  disable: process.env.NODE_ENV === "development", // يعمل PWA فقط في الإنتاج
+  disable: process.env.NODE_ENV === "development",
+
+  register: true,
+  skipWaiting: true,
+
+  runtimeCaching: [
+    {
+      urlPattern: /^https?.*/,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "https-cache",
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 24 * 60 * 60, // يوم واحد
+        },
+      },
+    },
+  ],
 });
 
 const nextConfig = withPWA({
   reactStrictMode: true,
+
   experimental: {
-    turbo: false, // تعطيل Turbopack
+    turbo: false,
   },
+
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  images: {
+    unoptimized: true, // Better iOS compatibility for external images
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+    ],
   },
 });
 

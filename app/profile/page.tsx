@@ -65,14 +65,51 @@ export default function ProfilePage() {
     router.push("/auth/login");
   };
 
-  const handleDownloadQr = () => {
+  const handleDownloadQr = async () => {
     if (!userData?.imageQr) return;
-    const link = document.createElement("a");
-    link.href = userData.imageQr;
-    link.download = `account-qr-${userData.accountId}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    // Check if iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (isIOS) {
+      try {
+        // Fetch the image and convert to blob
+        const response = await fetch(userData.imageQr);
+        const blob = await response.blob();
+
+        // Try Web Share API first (works well on iOS)
+        if (navigator.share && navigator.canShare) {
+          try {
+            const file = new File([blob], `account-qr-${userData.accountId}.png`, { type: "image/png" });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: "Account QR Code",
+              });
+              return;
+            }
+          } catch (err) {
+            console.log("Share failed, falling back to new tab");
+          }
+        }
+
+        // Fallback: Open in new tab for long-press save
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch (err) {
+        // Final fallback: open original URL
+        window.open(userData.imageQr, "_blank");
+      }
+    } else {
+      // Non-iOS: Use standard download
+      const link = document.createElement("a");
+      link.href = userData.imageQr;
+      link.download = `account-qr-${userData.accountId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const handleCopyAccountId = async () => {

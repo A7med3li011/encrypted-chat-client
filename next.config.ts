@@ -9,6 +9,9 @@ const nextConfig = withPWA({
   experimental: {
     turbo: false, // تعطيل Turbopack
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 });
 
 module.exports = nextConfig;

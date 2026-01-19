@@ -43,16 +43,16 @@ export const Modal: React.FC<ModalProps> = ({
         onClick={onClose}
       />
       <div
-        className={`relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${sizes[size]} mx-4 max-h-[90vh] overflow-y-auto`}
+        className={`relative bg-gray-800 rounded-lg shadow-xl w-full ${sizes[size]} mx-4 max-h-[90vh] overflow-y-auto`}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-100">
               {title}
             </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              className="text-gray-400 hover:text-gray-200 transition-colors"
             >
               <X size={24} />
             </button>

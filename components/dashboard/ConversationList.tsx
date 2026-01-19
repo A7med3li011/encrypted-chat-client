@@ -38,7 +38,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   if (conversations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
         <MessageCircle size={48} className="mb-4 opacity-50" />
         <p className="text-lg font-medium">No conversations yet</p>
         <p className="text-sm">Start a new conversation to get started</p>
@@ -79,7 +79,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100  truncate">
+                    <h3 className="font-semibold text-gray-100 truncate">
                       {otherParticipant?.userName || "Unknown User"}
                     </h3>
                     {/* <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
@@ -89,7 +89,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 </div>
                 <div className="flex items-center gap-2 ml-2">
                   {conversation.lastMessageAt && (
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
                       <Clock size={12} />
                       <span>
                         {formatDistanceToNow(conversation.lastMessageAt)}
@@ -99,7 +99,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   {onDeleteConversation && (
                     <button
                       onClick={(e) => handleDelete(e, conversation._id)}
-                      className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                      className="p-1 hover:bg-red-900/30 rounded transition-colors text-gray-400 hover:text-red-400"
                       aria-label="Delete conversation"
                     >
                       <Trash2 size={16} />

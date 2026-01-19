@@ -18,17 +18,17 @@ export default function Home() {
 
   if (isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="mt-4 text-gray-400">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 px-4">
       <div className="text-center">
         <div className="mb-1 ">
           <Image
@@ -41,11 +41,11 @@ export default function Home() {
           />
         </div>
 
-        <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4 -ms-4">
+        <h1 className="text-5xl font-bold text-white mb-4 -ms-4">
           Bond
         </h1>
 
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-md">
+        <p className="text-lg text-gray-400 mb-8 max-w-md">
           Secure, encrypted messaging for private conversations
         </p>
 

@@ -448,18 +448,18 @@ export default function ChatInterface() {
               )}
               {otherParticipantStatus && (
                 <div
-                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 ${getPresenceColor(
+                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-gray-800 ${getPresenceColor(
                     otherParticipantStatus,
                   )}`}
                 />
               )}
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="font-semibold text-gray-100">
                 {otherParticipant?.userName || "Unknown User"}
               </h3>
               {otherParticipant?.bio && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-48">
+                <p className="text-xs text-gray-400 truncate max-w-48">
                   {otherParticipant.bio}
                 </p>
               )}
@@ -468,7 +468,7 @@ export default function ChatInterface() {
           {socket.isConnected && (
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-gray-600 dark:text-gray-400">
+              <span className="text-xs text-gray-400">
                 Live
               </span>
             </div>
@@ -486,7 +486,7 @@ export default function ChatInterface() {
             <Loader2 className="animate-spin text-blue-600" size={32} />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+          <div className="flex items-center justify-center h-full text-gray-400">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
@@ -495,7 +495,7 @@ export default function ChatInterface() {
             {isLoadingMore && (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="animate-spin text-blue-600" size={24} />
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                <span className="ml-2 text-sm text-gray-400">
                   Loading more messages...
                 </span>
               </div>
@@ -503,7 +503,7 @@ export default function ChatInterface() {
             {/* Show "No more messages" indicator */}
             {!hasMore && messages.length > 0 && (
               <div className="flex items-center justify-center py-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-gray-400">
                   No more messages
                 </span>
               </div>
@@ -516,7 +516,7 @@ export default function ChatInterface() {
               />
             ))}
             {typingUsers.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 px-4">
+              <div className="flex items-center gap-2 text-sm text-gray-400 px-4">
                 <div className="flex gap-1">
                   <span
                     className="animate-bounce"
@@ -549,7 +549,7 @@ export default function ChatInterface() {
       </CardBody>
 
       {/* Message Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-t border-gray-700">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <Input
             type="text"
@@ -568,7 +568,7 @@ export default function ChatInterface() {
           </Button>
         </form>
         {socket.isConnected && (
-          <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+          <div className="text-xs text-green-400 mt-1">
             Connected to server
           </div>
         )}

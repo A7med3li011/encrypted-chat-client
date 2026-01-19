@@ -93,13 +93,13 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   return (
     <Card>
       <CardBody className="flex flex-col items-center space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className="text-lg font-semibold text-gray-100">
           {label}
         </h3>
         <div className="p-4 bg-white rounded-lg">
           <QRCodeSVG id={`qr-${label}`} value={value} size={200} />
         </div>
-        <div className="w-full p-3 bg-gray-100 dark:bg-gray-900 rounded-lg break-all text-sm text-gray-800 dark:text-gray-200 font-mono">
+        <div className="w-full p-3 bg-gray-900 rounded-lg break-all text-sm text-gray-200 font-mono">
           {value}
         </div>
         <div className="flex gap-2 w-full">

@@ -43,8 +43,8 @@ export default function LoginPage() {
       // Set auth state with user data
       // Tokens are stored in HTTP-only cookies on the server side
       setAuth({
-        _id: response.data._id || "",
         accountId: response.data.accountId,
+        profilePic: response.data.profilePic,
         userName: response.data.userName,
         role: "user",
         isActive: true,

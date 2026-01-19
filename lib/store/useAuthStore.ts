@@ -5,6 +5,8 @@ interface User {
   id: string;
   userName: string;
   accountId: string;
+  profilePic: string | null;
+  role: string;
 }
 
 interface AuthState {

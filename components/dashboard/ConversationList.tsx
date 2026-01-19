@@ -6,6 +6,7 @@ import { Conversation } from "@/lib/types/conversation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { MessageCircle, Clock, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "@/lib/utils/dateUtils";
+import Image from "next/image";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -44,7 +45,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       </div>
     );
   }
-
+ 
   return (
     <div className="space-y-2">
       {conversations.map((conversation) => {
@@ -62,11 +63,23 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             <div className="px-4 py-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3 flex-1">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                    {otherParticipant?.userName?.charAt(0).toUpperCase() || "?"}
-                  </div>
+                  {!otherParticipant?.profilePic ? (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                      {otherParticipant?.userName?.charAt(0).toUpperCase() ||
+                        "?"}
+                    </div>
+                  ) : (
+                    <Image
+                      src={`${process.env.NEXT_PUBLIC_SOCKET_URL}${otherParticipant?.profilePic}`}
+                      height={48}
+                      width={48}
+                      alt="user image"
+                      className="rounded-full object-cover object-center w-12 h-12"
+                    />
+                  )}
+
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100  truncate">
                       {otherParticipant?.userName || "Unknown User"}
                     </h3>
                     {/* <p className="text-sm text-gray-600 dark:text-gray-400 truncate">

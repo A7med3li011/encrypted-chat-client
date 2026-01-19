@@ -26,7 +26,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       case "delivered":
         return <CheckCheck size={14} className="text-white" />;
       case "read":
-        return <CheckCheck size={14} className="text-black" />;
+        return <CheckCheck size={14} className="text-white" />;
       default:
         return null;
     }

@@ -170,7 +170,6 @@ export default function RegisterPage() {
       // Set auth state with user data
       // Tokens are stored in HTTP-only cookies on the server side
       setAuth({
-        _id: response.data._id || "",
         accountId: response.data.accountId,
         userName: response.data.userName,
         location: formData.location,

@@ -7,6 +7,8 @@ export interface Conversation {
     userName: string;
     accountId: string;
     isActive: boolean;
+    profilePic?: string;
+    bio?: string;
   }>;
   isActive: boolean;
   lastMessage?: {

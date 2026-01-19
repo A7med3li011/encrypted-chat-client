@@ -262,6 +262,110 @@ export async function handlegetProfile() {
     };
   }
 }
+export async function handleUpdateIMageProfile(data) {
+  const token = (await cookies()).get("accessToken")?.value || "";
+
+  const formData = new FormData();
+
+  formData.append("profileImage", data);
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/users/profile/image`,
+      {
+        method: "PATCH",
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const result = await response.json();
+      return {
+        data: null,
+        success: false,
+        message: result.message,
+        error: {
+          message: `Failed to update image profile: ${response.statusText}`,
+          status: response.status,
+        },
+      };
+    }
+
+    const result = await response.json();
+
+    return {
+      data: result.data || null,
+      message: result.message,
+      success: true,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
+        status: 500,
+      },
+    };
+  }
+}
+export async function handleUpdateUserInfo(userName: string, bio: string) {
+  const token = (await cookies()).get("accessToken")?.value || "";
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/users/profile/info`,
+      {
+        method: "PATCH",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userName,
+          bio,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const result = await response.json();
+      return {
+        data: null,
+        success: false,
+        message: result.message,
+        error: {
+          message: `Failed to update  profile info: ${response.statusText}`,
+          status: response.status,
+        },
+      };
+    }
+
+    const result = await response.json();
+
+    return {
+      data: result.data || null,
+      message: result.message,
+      success: true,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
+        status: 500,
+      },
+    };
+  }
+}
 
 // Server action to get access token from HTTP-only cookie for socket connection
 export async function getAccessToken(): Promise<string | null> {

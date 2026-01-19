@@ -1,42 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
-import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
 import {
-  ArrowLeft,
-  User,
-  MapPin,
-  Smartphone,
-  Key,
-  AlertTriangle,
-  QrCode,
-  Download,
-  Copy,
-  Check,
-} from "lucide-react";
-import { handlegetProfile } from "@/lib/action/auth.action";
-import Image from "next/image";
+  handlegetProfile,
+  handleUpdateIMageProfile,
+  handleUpdateUserInfo,
+} from "@/lib/action/auth.action";
+import {
+  ProfileHeader,
+  ProfileImageSection,
+  ProfileInfoCard,
+  QRCodeModal,
+  EditProfileModal,
+  type UserData,
+} from "./components";
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
-  const [showDeactivate, setShowDeactivate] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [userData, setUserData] = useState<{
-    deviceType: string;
-    location: string;
-    userName: string;
-    imageQr: string;
-    accountId: string;
-  } | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [toggle, setToggle] = useState(false);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -44,12 +35,15 @@ export default function ProfilePage() {
       setError(null);
       try {
         const res = await handlegetProfile();
+      
         setUserData({
           deviceType: res.data.deviceType,
           location: res.data.location,
           userName: res.data.userName,
           imageQr: res.data.accountIdQR,
           accountId: res.data.accountId,
+          profileImage: res.data.profilePic || null,
+          bio: res.data.bio || "",
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load profile");
@@ -58,70 +52,105 @@ export default function ProfilePage() {
       }
     }
     fetchProfile();
+  }, [toggle]);
+
+  const handleImageSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        setUpdateError("Please select an image file");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setUpdateError("Image size must be less than 5MB");
+        return;
+      }
+
+      setIsUploadingImage(true);
+      setUpdateError(null);
+
+      try {
+        const result = await handleUpdateIMageProfile(file);
+
+        if (result.success) {
+          setUserData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  profileImage: result.data?.profileImage || prev.profileImage,
+                }
+              : prev
+          );
+          setToggle((prev) => !prev);
+        } else {
+          setUpdateError(result.message || "Failed to upload image");
+        }
+      } catch (err) {
+        setUpdateError(
+          err instanceof Error ? err.message : "Failed to upload image"
+        );
+      } finally {
+        setIsUploadingImage(false);
+        const input = e.target;
+        if (input) {
+          input.value = "";
+        }
+      }
+    },
+    []
+  );
+
+  const handleSaveProfile = useCallback(
+    async (userName: string, bio: string) => {
+      if (!userName.trim()) {
+        setUpdateError("Username is required");
+        return;
+      }
+
+      setIsUpdating(true);
+      setUpdateError(null);
+
+      try {
+        const result = await handleUpdateUserInfo(userName.trim(), bio.trim());
+
+        if (result.success) {
+          setUserData((prev) =>
+            prev ? { ...prev, userName: userName.trim(), bio: bio.trim() } : prev
+          );
+          setShowEditProfile(false);
+        } else {
+          setUpdateError(result.message || "Failed to update profile");
+        }
+      } catch (err) {
+        setUpdateError(
+          err instanceof Error ? err.message : "Failed to update profile"
+        );
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    []
+  );
+
+  const openEditProfile = useCallback(() => {
+    setUpdateError(null);
+    setShowEditProfile(true);
   }, []);
 
-  const handleDeactivate = () => {
-    clearAuth();
-    router.push("/auth/login");
-  };
+  const openQrCode = useCallback(() => {
+    setShowQrCode(true);
+  }, []);
 
-  const handleDownloadQr = async () => {
-    if (!userData?.imageQr) return;
+  const closeQrCode = useCallback(() => {
+    setShowQrCode(false);
+  }, []);
 
-    // Check if iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    if (isIOS) {
-      try {
-        // Fetch the image and convert to blob
-        const response = await fetch(userData.imageQr);
-        const blob = await response.blob();
-
-        // Try Web Share API first (works well on iOS)
-        if (navigator.share && navigator.canShare) {
-          try {
-            const file = new File([blob], `account-qr-${userData.accountId}.png`, { type: "image/png" });
-            if (navigator.canShare({ files: [file] })) {
-              await navigator.share({
-                files: [file],
-                title: "Account QR Code",
-              });
-              return;
-            }
-          } catch (err) {
-            console.log("Share failed, falling back to new tab");
-          }
-        }
-
-        // Fallback: Open in new tab for long-press save
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, "_blank");
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-      } catch (err) {
-        // Final fallback: open original URL
-        window.open(userData.imageQr, "_blank");
-      }
-    } else {
-      // Non-iOS: Use standard download
-      const link = document.createElement("a");
-      link.href = userData.imageQr;
-      link.download = `account-qr-${userData.accountId}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  const handleCopyAccountId = async () => {
-    if (!userData?.accountId) return;
-    try {
-      await navigator.clipboard.writeText(userData.accountId);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
+  const closeEditProfile = useCallback(() => {
+    setShowEditProfile(false);
+  }, []);
 
   if (!isAuthenticated || !user) {
     return null;
@@ -129,214 +158,43 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </Button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Profile Settings
-            </h1>
-          </div>
-        </div>
-      </header>
+      <ProfileHeader />
 
-      {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="space-y-6">
-          {/* Profile Information */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Profile Information
-              </h2>
-            </CardHeader>
-            <CardBody>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
-                </div>
-              ) : error ? (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-red-800 dark:text-red-200">{error}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.location.reload()}
-                    className="mt-2"
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              ) : userData ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <User className="text-gray-400" size={20} />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Username
-                      </p>
-                      <p className="text-gray-900 dark:text-gray-100">
-                        {userData.userName}
-                      </p>
-                    </div>
-                  </div>
+          <ProfileImageSection
+            profileImage={userData?.profileImage ?? null}
+            isUploadingImage={isUploadingImage}
+            updateError={updateError}
+            onImageSelect={handleImageSelect}
+          />
 
-                  <div className="flex items-center gap-3">
-                    <MapPin className="text-gray-400" size={20} />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Location
-                      </p>
-                      <p className="text-gray-900 dark:text-gray-100">
-                        {userData.location || "Not set"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="text-gray-400" size={20} />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Device Type
-                      </p>
-                      <p className="text-gray-900 dark:text-gray-100">
-                        {userData.deviceType || "Not set"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-3">
-                      <Key className="text-gray-400" size={20} />
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Account ID
-                        </p>
-                        <p className="text-gray-900 dark:text-gray-100 font-mono text-sm break-all">
-                          {userData.accountId}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowQrCode(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <QrCode size={16} />
-                        Show QR
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </CardBody>
-          </Card>
-
-          {/* Danger Zone */}
-          {/* <Card className="border-red-200 dark:border-red-800">
-            <CardHeader className="bg-red-50 dark:bg-red-900/20">
-              <h2 className="text-lg font-semibold text-red-900 dark:text-red-100 flex items-center gap-2">
-                <AlertTriangle size={20} />
-                Danger Zone
-              </h2>
-            </CardHeader>
-            <CardBody>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Deactivating your account will remove your access and delete all
-                your conversations and messages. This action cannot be undone.
-              </p>
-              <Button variant="danger" onClick={() => setShowDeactivate(true)}>
-                Deactivate Account
-              </Button>
-            </CardBody>
-          </Card> */}
+          <ProfileInfoCard
+            userData={userData}
+            isLoading={isLoading}
+            error={error}
+            onEditClick={openEditProfile}
+            onShowQrCode={openQrCode}
+          />
         </div>
       </div>
 
-      {/* QR Code Modal */}
-      <Modal
+      <QRCodeModal
         isOpen={showQrCode}
-        onClose={() => setShowQrCode(false)}
-        title="Account QR Code"
-      >
-        <div className="flex flex-col items-center gap-4">
-          {userData?.imageQr && (
-            <Image
-              src={`${userData.imageQr}`}
-              alt="Account QR Code"
-              width={256}
-              height={256}
-              className="w-64 h-64"
-            />
-          )}
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-            Scan this QR code to share your account ID
-          </p>
-          <div className="flex gap-3 w-full">
-            <Button
-              variant="secondary"
-              onClick={handleDownloadQr}
-              className="flex-1 flex items-center justify-center gap-2"
-            >
-              <Download size={16} />
-              Download QR
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleCopyAccountId}
-              className="flex-1 flex items-center justify-center gap-2"
-            >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-              {copied ? "Copied!" : "Copy ID"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onClose={closeQrCode}
+        imageQr={userData?.imageQr}
+        accountId={userData?.accountId}
+      />
 
-      {/* Deactivate Account Modal */}
-      {/* <Modal
-        isOpen={showDeactivate}
-        onClose={() => setShowDeactivate(false)}
-        title="Deactivate Account"
-      >
-        <div className="space-y-4">
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-800 dark:text-red-200 font-medium">
-              Are you absolutely sure?
-            </p>
-            <p className="text-red-700 dark:text-red-300 text-sm mt-2">
-              This action cannot be undone. All your conversations and messages
-              will be permanently deleted.
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setShowDeactivate(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDeactivate}
-              className="flex-1"
-            >
-              Yes, Deactivate
-            </Button>
-          </div>
-        </div>
-      </Modal> */}
+      <EditProfileModal
+        isOpen={showEditProfile}
+        onClose={closeEditProfile}
+        initialUserName={userData?.userName || ""}
+        initialBio={userData?.bio || ""}
+        isUpdating={isUpdating}
+        updateError={updateError}
+        onSave={handleSaveProfile}
+      />
     </div>
   );
 }

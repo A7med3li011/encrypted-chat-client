@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader } from "../ui/Card";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
@@ -8,13 +9,15 @@ import { useChatStore } from "@/lib/store/useChatStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { getMessages, sendMessage } from "@/lib/action/chat.action";
 import { MessageBubble } from "./MessageBubble";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import { useSocket } from "@/lib/hooks/useSocket";
 import { Message } from "@/lib/types/message";
 
-const MESSAGES_PER_PAGE = 15;
+const MESSAGES_PER_PAGE = 30;
 
 export default function ChatInterface() {
+  const router = useRouter();
   const {
     currentConversation,
     messages,
@@ -28,7 +31,6 @@ export default function ChatInterface() {
 
   const [messageText, setMessageText] = useState("");
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [userPresence, setUserPresence] = useState<
     Record<string, "online" | "away" | "busy" | "offline">
@@ -46,8 +48,11 @@ export default function ChatInterface() {
     // Handle new incoming messages
     const handleNewMessage = (message: Message) => {
       if (message.conversationId === currentConversation?._id) {
-        // Check if message already exists (to prevent duplicates from manual add)
-        const messageExists = messages.some((m) => m._id === message._id);
+        // Get fresh messages from store to avoid stale closure
+        const currentMessages = useChatStore.getState().messages;
+        const messageExists = currentMessages.some(
+          (m) => m._id === message._id,
+        );
 
         if (!messageExists) {
           addMessage(message);
@@ -117,7 +122,15 @@ export default function ChatInterface() {
       socket.off("message:deleted", handleMessageDeleted);
       socket.off("presence:update", handlePresenceUpdate);
     };
-  }, [currentConversation, user, socket, addMessage, updateMessage]);
+    // Only re-register listeners when conversation changes or socket instance changes
+    // Using getState() for messages inside handlers to avoid stale closures
+  }, [
+    currentConversation?._id,
+    user?.accountId,
+    socket,
+    addMessage,
+    updateMessage,
+  ]);
 
   useEffect(() => {
     if (currentConversation) {
@@ -246,11 +259,35 @@ export default function ChatInterface() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!messageText.trim() || !currentConversation || isSending) return;
+    if (!messageText.trim() || !currentConversation) return;
 
-    setIsSending(true);
     const tempMessage = messageText;
     setMessageText("");
+
+    // Create optimistic message for instant UI feedback (WhatsApp style)
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: Message = {
+      _id: tempId,
+      conversationId: currentConversation._id,
+      senderId: {
+        _id: user?.accountId || "",
+        accountId: user?.accountId || "",
+        userName: user?.userName || "",
+      },
+      receiverId: {
+        _id: "",
+        accountId: "",
+        userName: "",
+      },
+      content: tempMessage,
+      messageType: "text",
+      status: "sent",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Add optimistic message immediately
+    addMessage(optimisticMessage);
 
     // Stop typing indicator
     socket.stopTyping(currentConversation._id);
@@ -269,34 +306,47 @@ export default function ChatInterface() {
         },
         (response) => {
           if (response.success && response.message) {
-            addMessage(response.message);
-
-            // Message added manually for instant feedback
+            // Replace optimistic message with real one
+            updateMessage(tempId, {
+              _id: response.message._id,
+              status: response.message.status || "sent",
+            });
           } else {
             console.error(
               "❌ Failed to send message via socket:",
               response.error,
             );
+            // Update status to failed
+            updateMessage(tempId, { status: "failed" as any });
             // Fallback to HTTP
-            sendViaHttp(currentConversation._id, tempMessage);
+            sendViaHttp(currentConversation._id, tempMessage, tempId);
           }
-          setIsSending(false);
         },
       );
     } else {
       // Fallback to HTTP if socket is not connected
-
-      await sendViaHttp(currentConversation._id, tempMessage);
-      setIsSending(false);
+      await sendViaHttp(currentConversation._id, tempMessage, tempId);
     }
   };
 
-  const sendViaHttp = async (conversationId: string, content: string) => {
+  const sendViaHttp = async (
+    conversationId: string,
+    content: string,
+    tempId?: string,
+  ) => {
     try {
       const response = await sendMessage(conversationId, content);
 
       if (response.success && response.data) {
-        addMessage(response.data);
+        if (tempId) {
+          // Replace optimistic message with real one
+          updateMessage(tempId, {
+            _id: response.data._id,
+            status: response.data.status || "sent",
+          });
+        } else {
+          addMessage(response.data);
+        }
       } else {
         console.error("Failed to send message:", response.error?.message);
         setMessageText(content);
@@ -367,16 +417,35 @@ export default function ChatInterface() {
     return null;
   }
 
+  console.log(otherParticipant);
   return (
-    <Card className="h-150 flex flex-col">
+    <Card className=" h-dvh justify-end flex flex-col overflow-hidden">
       {/* Chat Header */}
       <CardHeader className="shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="p-2"
+            >
+              <ArrowLeft size={20} />
+            </Button>
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                {otherParticipant?.userName?.charAt(0).toUpperCase() || "?"}
-              </div>
+              {otherParticipant?.profilePic ? (
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_SOCKET_URL}${otherParticipant.profilePic}`}
+                  height={40}
+                  width={40}
+                  alt="user image"
+                  className="w-10 h-10 rounded-full object-cover object-center"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                  {otherParticipant?.userName?.charAt(0).toUpperCase() || "?"}
+                </div>
+              )}
               {otherParticipantStatus && (
                 <div
                   className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 ${getPresenceColor(
@@ -389,9 +458,9 @@ export default function ChatInterface() {
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                 {otherParticipant?.userName || "Unknown User"}
               </h3>
-              {otherParticipantStatus && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">
-                  {otherParticipantStatus}
+              {otherParticipant?.bio && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-48">
+                  {otherParticipant.bio}
                 </p>
               )}
             </div>
@@ -487,18 +556,15 @@ export default function ChatInterface() {
             placeholder="Type a message..."
             value={messageText}
             onChange={handleInputChange}
-            disabled={isSending}
             className="flex-1"
           />
           <Button
             type="submit"
             variant="primary"
-            disabled={!messageText.trim() || isSending}
-            isLoading={isSending}
-            className="flex items-center gap-2"
+            disabled={!messageText.trim()}
+            className="flex items-center justify-center w-10 h-10 p-0 rounded-full"
           >
-            <Send size={16} />
-            Send
+            <Send size={20} />
           </Button>
         </form>
         {socket.isConnected && (

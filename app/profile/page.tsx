@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import {
+  getAccessToken,
   handlegetProfile,
   handleUpdateIMageProfile,
   handleUpdateUserInfo,
@@ -15,6 +16,7 @@ import {
   EditProfileModal,
   type UserData,
 } from "./components";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -28,6 +30,16 @@ export default function ProfilePage() {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [toggle, setToggle] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function getTOOOken() {
+      const token = await getAccessToken();
+      console.log(token);
+      if (!token) router.push("/auth/login");
+    }
+    getTOOOken();
+  }, []);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -35,7 +47,7 @@ export default function ProfilePage() {
       setError(null);
       try {
         const res = await handlegetProfile();
-      
+
         setUserData({
           deviceType: res.data.deviceType,
           location: res.data.location,
@@ -82,7 +94,7 @@ export default function ProfilePage() {
                   ...prev,
                   profileImage: result.data?.profileImage || prev.profileImage,
                 }
-              : prev
+              : prev,
           );
           setToggle((prev) => !prev);
         } else {
@@ -90,7 +102,7 @@ export default function ProfilePage() {
         }
       } catch (err) {
         setUpdateError(
-          err instanceof Error ? err.message : "Failed to upload image"
+          err instanceof Error ? err.message : "Failed to upload image",
         );
       } finally {
         setIsUploadingImage(false);
@@ -100,7 +112,7 @@ export default function ProfilePage() {
         }
       }
     },
-    []
+    [],
   );
 
   const handleSaveProfile = useCallback(
@@ -118,7 +130,9 @@ export default function ProfilePage() {
 
         if (result.success) {
           setUserData((prev) =>
-            prev ? { ...prev, userName: userName.trim(), bio: bio.trim() } : prev
+            prev
+              ? { ...prev, userName: userName.trim(), bio: bio.trim() }
+              : prev,
           );
           setShowEditProfile(false);
         } else {
@@ -126,13 +140,13 @@ export default function ProfilePage() {
         }
       } catch (err) {
         setUpdateError(
-          err instanceof Error ? err.message : "Failed to update profile"
+          err instanceof Error ? err.message : "Failed to update profile",
         );
       } finally {
         setIsUpdating(false);
       }
     },
-    []
+    [],
   );
 
   const openEditProfile = useCallback(() => {

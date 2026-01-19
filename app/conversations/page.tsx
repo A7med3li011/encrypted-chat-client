@@ -17,6 +17,7 @@ import {
 import { Conversation } from "@/lib/types/conversation";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { getAccessToken } from "@/lib/action/auth.action";
 
 export default function ConversationsPage() {
   const router = useRouter();
@@ -29,6 +30,14 @@ export default function ConversationsPage() {
   } = useChatStore();
   const { showToast } = useToast();
 
+  useEffect(() => {
+    async function getTOOOken() {
+      const token = await getAccessToken();
+      console.log(token);
+      if (!token) router.push("/auth/login");
+    }
+    getTOOOken();
+  }, []);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [showStartConversation, setShowStartConversation] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);

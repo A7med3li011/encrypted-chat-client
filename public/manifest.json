@@ -1,6 +1,6 @@
 {
-  "name": "enc-chat",
-  "short_name": "enc-chat",
+  "name": "Bond",
+  "short_name": "Bond",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -366,6 +366,60 @@ export async function handleUpdateUserInfo(userName: string, bio: string) {
     };
   }
 }
+export async function handleRefreshToken() {
+  const cookiee = await cookies();
+  const token = cookiee.get("refreshToken")?.value || "";
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          refreshToken: token,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const result = await response.json();
+      cookiee.delete("accessToken");
+      cookiee.delete("refreshToken");
+      return {
+        data: null,
+        success: false,
+        message: result.message,
+        error: {
+          message: `Failed to update refreshToken: ${response.statusText}`,
+          status: response.status,
+        },
+      };
+    }
+
+    const result = await response.json();
+    cookiee.set("refreshToken", result.refreshToken);
+    cookiee.set("accessToken", result.accessToken);
+    return {
+      data: result.data || null,
+      message: result.message,
+      success: true,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
+        status: 500,
+      },
+    };
+  }
+}
 
 // Server action to get access token from HTTP-only cookie for socket connection
 export async function getAccessToken(): Promise<string | null> {

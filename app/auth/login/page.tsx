@@ -47,9 +47,6 @@ export default function LoginPage() {
         profilePic: response.data.profilePic,
         userName: response.data.userName,
         role: "user",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       });
 
       // Redirect to dashboard
@@ -64,18 +61,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br  from-gray-900 to-gray-800 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-center mb-2">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-              <Lock className="text-blue-600 dark:text-blue-400" size={32} />
+            <div className="p-3 bg-blue-900 rounded-full">
+              <Lock className="text-blue-400" size={32} />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-bold text-center text-gray-100">
             Welcome Back
           </h1>
-          <p className="text-center text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-center text-gray-400 mt-2">
             Login with your 24-word recovery password
           </p>
         </CardHeader>
@@ -83,14 +80,12 @@ export default function LoginPage() {
         <CardBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
+              <div className="p-3 bg-red-900/20 border border-red-800 rounded-lg flex items-start gap-2">
                 <AlertCircle
-                  className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                  className="text-red-400 flex-shrink-0 mt-0.5"
                   size={20}
                 />
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {error}
-                </p>
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
 
@@ -122,19 +117,19 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Don't have an account?{" "}
+            <p className="text-sm text-gray-400">
+              Don&apos;t have an account?{" "}
               <Link
                 href="/auth/register"
-                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                className="text-blue-400 hover:underline font-medium"
               >
                 Register here
               </Link>
             </p>
           </div>
 
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-xs text-blue-800 dark:text-blue-200">
+          <div className="mt-4 p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
+            <p className="text-xs text-blue-200">
               <strong>Tip:</strong> Your recovery password is a 24-word phrase
               you received during registration. Make sure to enter all words
               correctly with spaces between them.

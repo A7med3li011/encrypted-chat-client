@@ -17,7 +17,7 @@ import {
 import { Conversation } from "@/lib/types/conversation";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { getAccessToken } from "@/lib/action/auth.action";
+import { getAccessToken, handleRefreshToken } from "@/lib/action/auth.action";
 
 export default function ConversationsPage() {
   const router = useRouter();
@@ -30,10 +30,12 @@ export default function ConversationsPage() {
   } = useChatStore();
   const { showToast } = useToast();
 
+  const [isExpired, setIsExpired] = useState(false);
+  const [retry, setRetry] = useState(false);
   useEffect(() => {
     async function getTOOOken() {
       const token = await getAccessToken();
-      console.log(token);
+
       if (!token) router.push("/auth/login");
     }
     getTOOOken();
@@ -48,10 +50,30 @@ export default function ConversationsPage() {
   >(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  useEffect(() => {
+    async function refreshCookies() {
+      try {
+        const result = await handleRefreshToken();
+        if (result?.success) {
+          setRetry((prev) => !prev);
+        } else {
+          router.push("/auth/login");
+        }
+      } catch (error) {
+        router.push("/auth/login");
+      } finally {
+        setIsExpired(false);
+      }
+    }
+    if (isExpired) {
+      refreshCookies();
+    }
+  }, [isExpired, router]); // Refresh token when expired
+
   // Load conversations on mount
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [retry]);
 
   const loadConversations = async () => {
     setIsLoadingConversations(true);
@@ -61,6 +83,9 @@ export default function ConversationsPage() {
       const response = await getAllMyConversations("1", "50");
 
       if (!response.success) {
+        if (response.message == "jwt expired") {
+          return setIsExpired(true);
+        }
         setError(response.message || "Failed to load conversations");
         setConversations([]);
         return;
@@ -139,9 +164,9 @@ export default function ConversationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-900">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+      <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -153,9 +178,7 @@ export default function ConversationsPage() {
               >
                 <ArrowLeft size={20} />
               </Button>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                Conversations
-              </h1>
+              <h1 className="text-xl font-bold text-gray-100">Conversations</h1>
             </div>
             <div className="flex gap-2">
               <Button
@@ -190,7 +213,7 @@ export default function ConversationsPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
             ) : error ? (
-              <div className="flex flex-col items-center justify-center h-64 text-red-600 dark:text-red-400">
+              <div className="flex flex-col items-center justify-center h-64 text-red-400">
                 <p className="text-center mb-4">{error}</p>
                 <Button variant="primary" size="sm" onClick={loadConversations}>
                   Try Again

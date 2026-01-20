@@ -87,7 +87,7 @@ function QRCodeModalComponent({
             className="w-64 h-64"
           />
         )}
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+        <p className="text-sm text-gray-400 text-center">
           Scan this QR code to share your account ID
         </p>
         <div className="flex gap-3 w-full">

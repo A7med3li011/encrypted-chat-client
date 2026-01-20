@@ -23,14 +23,12 @@ function ProfileImageSectionComponent({
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Profile Picture
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-100">Profile Picture</h2>
       </CardHeader>
       <CardBody>
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
               {profileImage ? (
                 <Image
                   src={`${process.env.NEXT_PUBLIC_SOCKET_URL}${profileImage}`}
@@ -66,15 +64,13 @@ function ProfileImageSectionComponent({
             className="hidden"
           />
 
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+          <p className="text-sm text-gray-400 text-center">
             Tap the camera icon to update your profile picture
           </p>
 
           {updateError && (
-            <div className="w-full p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-800 dark:text-red-200 text-center">
-                {updateError}
-              </p>
+            <div className="w-full p-3 bg-red-900/20 border border-red-800 rounded-lg">
+              <p className="text-sm text-red-200 text-center">{updateError}</p>
             </div>
           )}
         </div>

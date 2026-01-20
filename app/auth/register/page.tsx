@@ -172,12 +172,8 @@ export default function RegisterPage() {
       setAuth({
         accountId: response.data.accountId,
         userName: response.data.userName,
-        location: formData.location,
-        deviceType: formData.deviceType,
+
         role: "user",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       });
 
       // Show success modal
@@ -196,18 +192,18 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-center mb-2">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-              <Lock className="text-blue-600 dark:text-blue-400" size={32} />
+            <div className="p-3 bg-blue-900 rounded-full">
+              <Lock className="text-blue-400" size={32} />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-bold text-center text-gray-100">
             Create Account
           </h1>
-          <p className="text-center text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-center text-gray-400 mt-2">
             Join our secure encrypted chat platform
           </p>
         </CardHeader>
@@ -215,14 +211,12 @@ export default function RegisterPage() {
         <CardBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
+              <div className="p-3 bg-red-900/20 border border-red-800 rounded-lg flex items-start gap-2">
                 <AlertCircle
-                  className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                  className="text-red-400 flex-shrink-0 mt-0.5"
                   size={20}
                 />
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {error}
-                </p>
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
 
@@ -250,11 +244,11 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-400">
               Already have an account?{" "}
               <Link
                 href="/auth/login"
-                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                className="text-blue-400 hover:underline font-medium"
               >
                 Login here
               </Link>
@@ -270,12 +264,12 @@ export default function RegisterPage() {
         size="xl"
       >
         <div className="space-y-6">
-          <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-green-800 dark:text-green-200 font-medium">
+          <div className="p-4 bg-green-900/20 border border-green-800 rounded-lg">
+            <p className="text-green-200 font-medium">
               Your account has been created successfully!
             </p>
-            <p className="text-green-700 dark:text-green-300 text-sm mt-2">
-              Please save your Account ID and Recovery Password. You'll need the
+            <p className="text-green-300 text-sm mt-2">
+              Please save your Account ID and Recovery Password. You&apos;ll need the
               Recovery Password to login.
             </p>
           </div>
@@ -293,11 +287,11 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+          <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4">
+            <p className="text-yellow-200 font-medium">
               Important: Keep your Recovery Password safe!
             </p>
-            <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-2">
+            <p className="text-yellow-300 text-sm mt-2">
               Your 12-word recovery password is the only way to access your
               account. Store it securely offline.
             </p>

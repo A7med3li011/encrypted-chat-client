@@ -30,7 +30,8 @@ export default function ScanQRPage() {
 
   // Detect iOS
   useEffect(() => {
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    const iOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
     setIsIOS(iOS);
   }, []);
@@ -56,7 +57,13 @@ export default function ScanQRPage() {
   }, []);
 
   const scanQRCode = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !isScanning || !isCameraReady) return;
+    if (
+      !videoRef.current ||
+      !canvasRef.current ||
+      !isScanning ||
+      !isCameraReady
+    )
+      return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -79,11 +86,15 @@ export default function ScanQRPage() {
     try {
       // Use BarcodeDetector API if available (Chrome, Edge, Safari 16.4+)
       if ("BarcodeDetector" in window) {
-        const barcodeDetector = new (window as unknown as {
-          BarcodeDetector: new (options: { formats: string[] }) => {
-            detect: (source: HTMLCanvasElement) => Promise<{ rawValue: string }[]>
+        const barcodeDetector = new (
+          window as unknown as {
+            BarcodeDetector: new (options: { formats: string[] }) => {
+              detect: (
+                source: HTMLCanvasElement,
+              ) => Promise<{ rawValue: string }[]>;
+            };
           }
-        }).BarcodeDetector({
+        ).BarcodeDetector({
           formats: ["qr_code"],
         });
         const barcodes = await barcodeDetector.detect(canvas);
@@ -198,12 +209,23 @@ export default function ScanQRPage() {
       let errorMessage = "Failed to access camera.";
 
       if (err instanceof Error) {
-        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-          errorMessage = "Camera permission denied. Please allow camera access in your device settings.";
-        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        if (
+          err.name === "NotAllowedError" ||
+          err.name === "PermissionDeniedError"
+        ) {
+          errorMessage =
+            "Camera permission denied. Please allow camera access in your device settings.";
+        } else if (
+          err.name === "NotFoundError" ||
+          err.name === "DevicesNotFoundError"
+        ) {
           errorMessage = "No camera found on this device.";
-        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-          errorMessage = "Camera is in use by another app. Please close other apps using the camera.";
+        } else if (
+          err.name === "NotReadableError" ||
+          err.name === "TrackStartError"
+        ) {
+          errorMessage =
+            "Camera is in use by another app. Please close other apps using the camera.";
         } else if (err.name === "OverconstrainedError") {
           errorMessage = "Camera doesn't support the required settings.";
         } else {
@@ -334,7 +356,9 @@ export default function ScanQRPage() {
           <div className="text-center max-w-sm">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
               <CameraOff size={64} className="text-gray-400 mx-auto mb-4" />
-              <p className="text-red-600 dark:text-red-400 mb-4 text-sm">{error}</p>
+              <p className="text-red-600 dark:text-red-400 mb-4 text-sm">
+                {error}
+              </p>
               {isIOS && (
                 <p className="text-gray-500 dark:text-gray-400 text-xs mb-4">
                   On iOS, go to Settings → Safari → Camera and allow access.

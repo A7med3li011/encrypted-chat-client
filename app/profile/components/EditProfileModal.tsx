@@ -51,7 +51,7 @@ function EditProfileModalComponent({
         />
 
         <div className="w-full">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Bio
           </label>
           <textarea
@@ -60,18 +60,16 @@ function EditProfileModalComponent({
             placeholder="Tell us about yourself..."
             maxLength={200}
             rows={3}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-500 resize-none"
           />
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-400">
             {editBio.length}/200 characters
           </p>
         </div>
 
         {updateError && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-800 dark:text-red-200">
-              {updateError}
-            </p>
+          <div className="p-3 bg-red-900/20 border border-red-800 rounded-lg">
+            <p className="text-sm text-red-200">{updateError}</p>
           </div>
         )}
 

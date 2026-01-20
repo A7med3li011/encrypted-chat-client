@@ -7,6 +7,7 @@ import {
   handlegetProfile,
   handleUpdateIMageProfile,
   handleUpdateUserInfo,
+  handleRefreshToken,
 } from "@/lib/action/auth.action";
 import {
   ProfileHeader,
@@ -19,7 +20,7 @@ import {
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, updateUser } = useAuthStore();
 
   const [showQrCode, setShowQrCode] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -30,16 +31,38 @@ export default function ProfilePage() {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [toggle, setToggle] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
+  const [retry, setRetry] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     async function getTOOOken() {
       const token = await getAccessToken();
-      console.log(token);
+
       if (!token) router.push("/auth/login");
     }
     getTOOOken();
   }, []);
+
+  useEffect(() => {
+    async function refreshCookies() {
+      try {
+        const result = await handleRefreshToken();
+        if (result?.success) {
+          setRetry((prev) => !prev);
+        } else {
+          router.push("/auth/login");
+        }
+      } catch (error) {
+        router.push("/auth/login");
+      } finally {
+        setIsExpired(false);
+      }
+    }
+    if (isExpired) {
+      refreshCookies();
+    }
+  }, [isExpired, router]);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -48,14 +71,25 @@ export default function ProfilePage() {
       try {
         const res = await handlegetProfile();
 
+        if (!res.success) {
+          if (res.message === "jwt expired") {
+            return setIsExpired(true);
+          }
+          setError(res.message || "Failed to load profile");
+          return;
+        }
+
         setUserData({
-          deviceType: res.data.deviceType,
-          location: res.data.location,
-          userName: res.data.userName,
-          imageQr: res.data.accountIdQR,
-          accountId: res.data.accountId,
-          profileImage: res.data.profilePic || null,
-          bio: res.data.bio || "",
+          userName: res?.data?.userName,
+          imageQr: res?.data?.accountIdQR,
+          accountId: res?.data?.accountId,
+          profileImage: res?.data?.profilePic || null,
+          bio: res?.data?.bio || "",
+        });
+        updateUser({
+          accountId: res?.data?.accountId,
+          profilePic: res?.data?.profilePic || null,
+          userName: res?.data?.userName,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load profile");
@@ -64,7 +98,7 @@ export default function ProfilePage() {
       }
     }
     fetchProfile();
-  }, [toggle]);
+  }, [toggle, retry]);
 
   const handleImageSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,7 +205,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-900">
       <ProfileHeader />
 
       <div className="max-w-4xl mx-auto px-4 py-8">

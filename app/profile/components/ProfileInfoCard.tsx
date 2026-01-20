@@ -15,13 +15,12 @@ import {
 } from "lucide-react";
 
 export interface UserData {
-  deviceType: string;
-  location: string;
-  userName: string;
-  imageQr: string;
-  accountId: string;
-  profileImage: string | null;
-  bio: string;
+  deviceType?: string;
+  userName?: string;
+  imageQr?: string;
+  accountId?: string;
+  profileImage?: string | null;
+  bio?: string;
 }
 
 interface ProfileInfoCardProps {
@@ -53,7 +52,7 @@ function ProfileInfoCardComponent({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-semibold text-gray-100">
             Profile Information
           </h2>
           <Button
@@ -70,11 +69,11 @@ function ProfileInfoCardComponent({
       <CardBody>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-100"></div>
           </div>
         ) : error ? (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-800 dark:text-red-200">{error}</p>
+          <div className="p-4 bg-red-900/20 border border-red-800 rounded-lg">
+            <p className="text-red-200">{error}</p>
             <Button
               variant="ghost"
               size="sm"
@@ -89,30 +88,20 @@ function ProfileInfoCardComponent({
             <div className="flex items-center gap-3">
               <User className="text-gray-400" size={20} />
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Username
-                </p>
-                <p className="text-gray-900 dark:text-gray-100">
-                  {userData.userName}
-                </p>
+                <p className="text-sm text-gray-400">Username</p>
+                <p className="text-gray-100">{userData.userName}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
               <Edit2 className="text-gray-400 mt-0.5" size={20} />
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Bio</p>
-                <p className="text-gray-900 dark:text-gray-100">
-                  {userData.bio || "No bio set"}
-                </p>
+                <p className="text-sm text-gray-400">Bio</p>
+                <p className="text-gray-100">{userData.bio || "No bio set"}</p>
               </div>
             </div>
 
-           
-
-            
-
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 border-t border-gray-700">
               <div className="flex items-center gap-3">
                 <Key className="text-gray-400" size={20} />
                 <div
@@ -120,15 +109,18 @@ function ProfileInfoCardComponent({
                   onClick={handleCopyAccountId}
                   title="Click to copy"
                 >
-                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  <p className="text-sm text-gray-400 flex items-center gap-2">
                     Account ID
                     {copied ? (
                       <Check size={14} className="text-green-500" />
                     ) : (
-                      <Copy size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Copy
+                        size={14}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
                     )}
                   </p>
-                  <p className="text-gray-900 dark:text-gray-100 font-mono text-sm break-all group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <p className="text-gray-100 font-mono text-sm break-all group-hover:text-blue-400 transition-colors">
                     {userData.accountId}
                   </p>
                 </div>

@@ -33,15 +33,11 @@ const nextConfig = withPWA({
   },
 
   images: {
-    unoptimized: true, // Better iOS compatibility for external images
+    unoptimized: true, // مهم للـ iOS
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
-      },
-      {
-        protocol: "http",
-        hostname: "**",
+        hostname: "api.healthy.bond",
       },
     ],
   },

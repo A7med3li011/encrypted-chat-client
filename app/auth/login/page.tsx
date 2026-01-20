@@ -8,7 +8,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { handleLogin } from "@/lib/action/auth.action";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import Link from "next/link";
-import { Lock, LogIn, AlertCircle } from "lucide-react";
+import { LogIn, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -65,9 +65,13 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-center mb-2">
-            <div className="p-3 bg-blue-900 rounded-full">
-              <Lock className="text-blue-400" size={32} />
-            </div>
+            <Image
+              src="/assets/bond_logo.png"
+              alt="Logo"
+              width={80}
+              height={80}
+              className="rounded-full"
+            />
           </div>
           <h1 className="text-2xl font-bold text-center text-gray-100">
             Welcome Back

@@ -40,6 +40,11 @@ const nextConfig = withPWA({
         hostname: "api.healthy.bond",
       },
     ],
+    experimental: {
+      serverActions: {
+        bodySizeLimit: "100mb",
+      },
+    },
   },
 });
 

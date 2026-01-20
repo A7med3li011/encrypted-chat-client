@@ -36,8 +36,8 @@ export default function DashboardPage() {
       try {
         const res = await handlegetProfile();
         setQrData({
-          imageQr: res.data.accountIdQR,
-          accountId: res.data.accountId,
+          imageQr: res?.data?.accountIdQR,
+          accountId: res?.data?.accountId,
         });
       } catch (err) {
         console.error("Failed to load QR data:", err);

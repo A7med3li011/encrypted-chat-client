@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { handleLogin } from "@/lib/action/auth.action";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import Link from "next/link";
+import Image from "next/image";
 import { LogIn, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {

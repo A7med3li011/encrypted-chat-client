@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
   const timeoutId = setTimeout(() => {
     checkToken();
-  }, 1200);
+  }, 500);
 
   return () => clearTimeout(timeoutId);
 }, []);

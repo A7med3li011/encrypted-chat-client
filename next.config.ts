@@ -26,6 +26,9 @@ const nextConfig = withPWA({
 
   experimental: {
     turbo: false,
+    serverActions: {
+      bodySizeLimit: "100mb",
+    },
   },
 
   typescript: {
@@ -40,11 +43,6 @@ const nextConfig = withPWA({
         hostname: "api.healthy.bond",
       },
     ],
-    experimental: {
-      serverActions: {
-        bodySizeLimit: "100mb",
-      },
-    },
   },
 });
 

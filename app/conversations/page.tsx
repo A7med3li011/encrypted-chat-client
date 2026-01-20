@@ -17,11 +17,11 @@ import {
 import { Conversation } from "@/lib/types/conversation";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { getAccessToken, handleRefreshToken } from "@/lib/action/auth.action";
+import { clearCookies, getAccessToken, handleRefreshToken } from "@/lib/action/auth.action";
 
 export default function ConversationsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated,clearAuth } = useAuthStore();
   const {
     conversations,
     currentConversation,
@@ -32,14 +32,24 @@ export default function ConversationsPage() {
 
   const [isExpired, setIsExpired] = useState(false);
   const [retry, setRetry] = useState(false);
-  useEffect(() => {
-    async function getTOOOken() {
-      const token = await getAccessToken();
+    useEffect(() => {
+  const checkToken = async () => {
+    const token = await getAccessToken();
 
-      if (!token) router.push("/auth/login");
+    if (!token) {
+      clearAuth();
+      await  clearCookies();
+      router.push("/auth/login");
     }
-    getTOOOken();
-  }, []);
+  };
+
+  const timeoutId = setTimeout(() => {
+    checkToken();
+  }, 1200);
+
+  return () => clearTimeout(timeoutId);
+}, []);
+  
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [showStartConversation, setShowStartConversation] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);

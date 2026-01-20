@@ -95,9 +95,9 @@ function ProfileInfoCardComponent({
 
             <div className="flex items-start gap-3">
               <Edit2 className="text-gray-400 mt-0.5" size={20} />
-              <div>
+              <div className=" w-full ">
                 <p className="text-sm text-gray-400">Bio</p>
-                <p className="text-gray-100">{userData.bio || "No bio set"}</p>
+                <p className="text-gray-100 break-words">{userData.bio  || "No bio set"} </p>
               </div>
             </div>
 

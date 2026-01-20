@@ -58,12 +58,12 @@ function EditProfileModalComponent({
             value={editBio}
             onChange={(e) => setEditBio(e.target.value)}
             placeholder="Tell us about yourself..."
-            maxLength={200}
-            rows={3}
+            maxLength={1024}
+            rows={10}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-500 resize-none"
           />
           <p className="mt-1 text-sm text-gray-400">
-            {editBio.length}/200 characters
+            {editBio.length}/1024 characters
           </p>
         </div>
 

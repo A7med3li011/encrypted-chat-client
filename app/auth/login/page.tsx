@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { handleLogin } from "@/lib/action/auth.action";
+import { clearCookies, getAccessToken, handleLogin } from "@/lib/action/auth.action";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,12 +13,27 @@ import { LogIn, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { setAuth, clearAuth } = useAuthStore();
 
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+   useEffect(() => {
+    const checkToken = async () => {
+      const token = await getAccessToken();
+  
+      if (token) {
+        router.push("/dashboard");
+      }
+    };
+  
+   
+      checkToken();
+   
+  
+   
+  }, []);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);

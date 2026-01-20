@@ -28,7 +28,7 @@ function ProfileImageSectionComponent({
       <CardBody>
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center">
               {profileImage ? (
                 <Image
                   src={`${process.env.NEXT_PUBLIC_SOCKET_URL}${profileImage}`}

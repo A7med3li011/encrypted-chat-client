@@ -9,6 +9,8 @@ import logoImage from "../../public/assets/bond_logo.png";
 import {
   handleLogout as logoutAction,
   handlegetProfile,
+  getAccessToken,
+  clearCookies,
 } from "@/lib/action/auth.action";
 import { useToast } from "@/components/ui/Toast";
 import Image from "next/image";
@@ -30,6 +32,24 @@ export default function DashboardPage() {
     imageQr?: string;
     accountId?: string;
   }>({});
+
+ useEffect(() => {
+  const checkToken = async () => {
+    const token = await getAccessToken();
+
+    if (!token) {
+      clearAuth();
+      await  clearCookies();
+      router.push("/auth/login");
+    }
+  };
+
+  const timeoutId = setTimeout(() => {
+    checkToken();
+  }, 1200);
+
+  return () => clearTimeout(timeoutId);
+}, []);
 
   useEffect(() => {
     async function fetchQrData() {
@@ -108,7 +128,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden">
+              <div className="relative w-10 h-10 rounded-lg overflow-hidden">
                 <Image
                   src={
                     user?.profilePic

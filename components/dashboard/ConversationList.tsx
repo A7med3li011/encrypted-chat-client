@@ -74,7 +74,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       height={48}
                       width={48}
                       alt="user image"
-                      className="rounded-full object-cover object-center w-12 h-12"
+                      className="rounded-lg object-cover object-center w-12 h-12"
                     />
                   )}
 

@@ -45,29 +45,27 @@ export default function Home() {
           Bond
         </h1>
 
-        <p className="text-lg text-gray-400 mb-8 max-w-md">
-          Secure, encrypted messaging for private conversations
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => router.push("/auth/login")}
-            className="flex items-center justify-center gap-2"
-          >
-            <LogIn size={20} />
-            Login
-          </Button>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-15">
+          
 
           <Button
             variant="secondary"
             size="lg"
             onClick={() => router.push("/auth/register")}
-            className="flex items-center justify-center gap-2"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#3CB6DB] via-[#7858DD] to-[#D558B6]"
           >
-            <UserPlus size={20} />
-            Register
+            {/* <UserPlus size={20} /> */}
+           Create Account
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => router.push("/auth/login")}
+            className="flex items-center justify-center gap-2 bg-transparent border border-gray-400 hover:bg-transparent"
+          >
+           
+            Log in
           </Button>
         </div>
       </div>

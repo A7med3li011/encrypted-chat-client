@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import {
   getAccessToken,
+  clearCookies,
   handlegetProfile,
   handleUpdateIMageProfile,
   handleUpdateUserInfo,
@@ -15,15 +16,19 @@ import {
   ProfileInfoCard,
   QRCodeModal,
   EditProfileModal,
+  ImageCropperModal,
   type UserData,
 } from "./components";
 import { useRouter } from "next/navigation";
 
+
 export default function ProfilePage() {
-  const { user, isAuthenticated, updateUser } = useAuthStore();
+  const { user, isAuthenticated, updateUser,clearAuth } = useAuthStore();
 
   const [showQrCode, setShowQrCode] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -35,14 +40,24 @@ export default function ProfilePage() {
   const [retry, setRetry] = useState(false);
   const router = useRouter();
 
+ 
   useEffect(() => {
-    async function getTOOOken() {
-      const token = await getAccessToken();
+  const checkToken = async () => {
+    const token = await getAccessToken();
 
-      if (!token) router.push("/auth/login");
+    if (!token) {
+      clearAuth();
+      await  clearCookies();
+      router.push("/auth/login");
     }
-    getTOOOken();
-  }, []);
+  };
+
+  const timeoutId = setTimeout(() => {
+    checkToken();
+  }, 1200);
+
+  return () => clearTimeout(timeoutId);
+}, []);
 
   useEffect(() => {
     async function refreshCookies() {
@@ -101,7 +116,7 @@ export default function ProfilePage() {
   }, [toggle, retry]);
 
   const handleImageSelect = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
@@ -115,11 +130,39 @@ export default function ProfilePage() {
         return;
       }
 
+      setUpdateError(null);
+
+      // Create a URL for the selected image and open the cropper
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedImageSrc(imageUrl);
+      setShowImageCropper(true);
+
+      // Reset the input
+      e.target.value = "";
+    },
+    [],
+  );
+
+  const handleCropComplete = useCallback(
+    async (croppedImageBlob: Blob) => {
+      setShowImageCropper(false);
+      
+      // Cleanup the object URL
+      if (selectedImageSrc) {
+        URL.revokeObjectURL(selectedImageSrc);
+        setSelectedImageSrc(null);
+      }
+
       setIsUploadingImage(true);
       setUpdateError(null);
 
       try {
-        const result = await handleUpdateIMageProfile(file);
+        // Convert Blob to File for upload
+        const croppedFile = new File([croppedImageBlob], "profile-image.jpg", {
+          type: "image/jpeg",
+        });
+
+        const result = await handleUpdateIMageProfile(croppedFile);
 
         if (result.success) {
           setUserData((prev) =>
@@ -140,14 +183,18 @@ export default function ProfilePage() {
         );
       } finally {
         setIsUploadingImage(false);
-        const input = e.target;
-        if (input) {
-          input.value = "";
-        }
       }
     },
-    [],
+    [selectedImageSrc],
   );
+
+  const handleCropperClose = useCallback(() => {
+    setShowImageCropper(false);
+    if (selectedImageSrc) {
+      URL.revokeObjectURL(selectedImageSrc);
+      setSelectedImageSrc(null);
+    }
+  }, [selectedImageSrc]);
 
   const handleSaveProfile = useCallback(
     async (userName: string, bio: string) => {
@@ -161,7 +208,7 @@ export default function ProfilePage() {
 
       try {
         const result = await handleUpdateUserInfo(userName.trim(), bio.trim());
-
+        console.log(result,"asdasdasxzczxc");
         if (result.success) {
           setUserData((prev) =>
             prev
@@ -207,7 +254,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-900">
       <ProfileHeader />
-
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <ProfileImageSection
@@ -243,6 +289,15 @@ export default function ProfilePage() {
         updateError={updateError}
         onSave={handleSaveProfile}
       />
+
+      {selectedImageSrc && (
+        <ImageCropperModal
+          isOpen={showImageCropper}
+          imageSrc={selectedImageSrc}
+          onClose={handleCropperClose}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 }

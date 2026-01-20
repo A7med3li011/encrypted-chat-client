@@ -72,15 +72,13 @@ export async function handleRegister(
     cookiee.set("accessToken", result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 15, // 15 minutes
+      sameSite: "lax",
     });
 
     cookiee.set("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax",
     });
 
     return {
@@ -135,15 +133,13 @@ export async function handleLogin(data: LoginData): Promise<ActionResponse> {
     cookiee.set("accessToken", result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 15 * 60, // 15 minutes
+      sameSite: "lax",
     });
 
     cookiee.set("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax",
     });
 
     return {
@@ -425,4 +421,8 @@ export async function handleRefreshToken() {
 export async function getAccessToken(): Promise<string | null> {
   const token = (await cookies()).get("accessToken")?.value || null;
   return token;
+}
+export async function clearCookies() {
+  (await cookies()).delete("accessToken");
+  (await cookies()).delete("refreshToken");
 }

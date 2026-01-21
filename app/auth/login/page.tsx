@@ -54,7 +54,7 @@ export default function LoginPage() {
           accountId: response.data.accountId,
           profilePic: response.data.profilePic,
           userName: response.data.userName,
-          role: "user",
+          role: response.data.role || "user",
         },
         response.accessToken,
         response.refreshToken,

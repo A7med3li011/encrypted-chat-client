@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { Button } from "@/components/ui/Button";
-import { MessageSquare, User, QrCode, ScanLine, LogOut } from "lucide-react";
+import { MessageSquare, User, QrCode, ScanLine, LogOut, Shield } from "lucide-react";
 import logoImage from "../../public/assets/bond_logo.png";
 import {
   handleLogout as logoutAction,
@@ -99,6 +99,8 @@ export default function DashboardPage() {
     setShowQrCode(false);
   }, []);
 
+  const isAdminOrSubadmin = user?.role === "admin" || user?.role === "subadmin";
+
   const navItems: NavItem[] = [
     {
       icon: <MessageSquare size={32} />,
@@ -120,6 +122,16 @@ export default function DashboardPage() {
       label: "Scan QR",
       onClick: () => router.push("/scan"),
     },
+    // Add admin panel button for admins and subadmins
+    ...(isAdminOrSubadmin
+      ? [
+          {
+            icon: <Shield size={32} />,
+            label: "Admin Panel",
+            onClick: () => router.push("/admin"),
+          },
+        ]
+      : []),
   ];
 
   if (!isAuthenticated) {

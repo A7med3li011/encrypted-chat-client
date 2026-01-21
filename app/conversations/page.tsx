@@ -17,11 +17,11 @@ import {
 import { Conversation } from "@/lib/types/conversation";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { clearCookies, getAccessToken, handleRefreshToken } from "@/lib/action/auth.action";
+import { handleRefreshToken } from "@/lib/action/auth.action";
 
 export default function ConversationsPage() {
   const router = useRouter();
-  const { isAuthenticated,clearAuth } = useAuthStore();
+  const { isAuthenticated, clearAuth, accessToken, refreshToken, setTokens } = useAuthStore();
   const {
     conversations,
     currentConversation,
@@ -32,23 +32,42 @@ export default function ConversationsPage() {
 
   const [isExpired, setIsExpired] = useState(false);
   const [retry, setRetry] = useState(false);
-    useEffect(() => {
-  const checkToken = async () => {
-    const token = await getAccessToken();
 
-    if (!token) {
-      clearAuth();
-      await  clearCookies();
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) {
       router.push("/auth/login");
     }
-  };
+  }, [isAuthenticated, accessToken, router]);
 
-  const timeoutId = setTimeout(() => {
-    checkToken();
-  }, 500);
-
-  return () => clearTimeout(timeoutId);
-}, []);
+  // Handle token refresh when expired
+  useEffect(() => {
+    async function refreshTokens() {
+      if (!refreshToken) {
+        clearAuth();
+        router.push("/auth/login");
+        return;
+      }
+      try {
+        const result = await handleRefreshToken(refreshToken);
+        if (result?.success && result.accessToken && result.refreshToken) {
+          setTokens(result.accessToken, result.refreshToken);
+          setRetry((prev) => !prev);
+        } else {
+          clearAuth();
+          router.push("/auth/login");
+        }
+      } catch (error) {
+        clearAuth();
+        router.push("/auth/login");
+      } finally {
+        setIsExpired(false);
+      }
+    }
+    if (isExpired) {
+      refreshTokens();
+    }
+  }, [isExpired, router, refreshToken, clearAuth, setTokens]);
   
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [showStartConversation, setShowStartConversation] = useState(false);
@@ -60,32 +79,13 @@ export default function ConversationsPage() {
   >(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    async function refreshCookies() {
-      try {
-        const result = await handleRefreshToken();
-        if (result?.success) {
-          setRetry((prev) => !prev);
-        } else {
-          router.push("/auth/login");
-        }
-      } catch (error) {
-        router.push("/auth/login");
-      } finally {
-        setIsExpired(false);
-      }
-    }
-    if (isExpired) {
-      refreshCookies();
-    }
-  }, [isExpired, router]); // Refresh token when expired
-
   // Load conversations on mount
   useEffect(() => {
     loadConversations();
-  }, [retry]);
+  }, [retry, accessToken]);
 
   const loadConversations = async () => {
+    if (!accessToken) return;
     setIsLoadingConversations(true);
     setError("");
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { clearCookies, getAccessToken, handleLogin } from "@/lib/action/auth.action";
+import { handleLogin } from "@/lib/action/auth.action";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,27 +13,28 @@ import { LogIn, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuth, clearAuth } = useAuthStore();
+  const { setAuth, isAuthenticated, clearAuth, isHydrated } = useAuthStore();
+  const [isClient, setIsClient] = useState(false);
 
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-   useEffect(() => {
-    const checkToken = async () => {
-      const token = await getAccessToken();
-  
-      if (token) {
-        router.push("/dashboard");
-      }
-    };
-  
-   
-      checkToken();
-   
-  
-   
+  useEffect(() => {
+    setIsClient(true);
   }, []);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isHydrated && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router, isHydrated]);
+
+  if (!isClient || !isHydrated) {
+    return null;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -43,7 +44,7 @@ export default function LoginPage() {
       // Trim and normalize the recovery password
       const normalizedPassword = recoveryPassword.trim().replace(/\s+/g, " ");
 
-      // Login using server action
+      // Login using client-side function
       const response = await handleLogin({
         recoveryPassword: normalizedPassword,
       });
@@ -56,14 +57,17 @@ export default function LoginPage() {
         return;
       }
 
-      // Set auth state with user data
-      // Tokens are stored in HTTP-only cookies on the server side
-      setAuth({
-        accountId: response.data.accountId,
-        profilePic: response.data.profilePic,
-        userName: response.data.userName,
-        role: "user",
-      });
+      // Set auth state with user data and tokens
+      setAuth(
+        {
+          accountId: response.data.accountId,
+          profilePic: response.data.profilePic,
+          userName: response.data.userName,
+          role: "user",
+        },
+        response.accessToken,
+        response.refreshToken,
+      );
 
       // Redirect to dashboard
       router.push("/dashboard");

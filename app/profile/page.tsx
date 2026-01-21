@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import {
-  getAccessToken,
-  clearCookies,
   handlegetProfile,
   handleUpdateIMageProfile,
   handleUpdateUserInfo,
@@ -23,7 +21,7 @@ import { useRouter } from "next/navigation";
 
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, updateUser,clearAuth } = useAuthStore();
+  const { user, isAuthenticated, updateUser, clearAuth, accessToken, refreshToken, setTokens, isHydrated } = useAuthStore();
 
   const [showQrCode, setShowQrCode] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -40,51 +38,49 @@ export default function ProfilePage() {
   const [retry, setRetry] = useState(false);
   const router = useRouter();
 
- 
+  // Redirect if not authenticated
   useEffect(() => {
-  const checkToken = async () => {
-    const token = await getAccessToken();
-
-    if (!token) {
-      clearAuth();
-      await  clearCookies();
+    if (isHydrated && (!isAuthenticated || !accessToken)) {
       router.push("/auth/login");
     }
-  };
+  }, [isAuthenticated, accessToken, router, isHydrated]);
 
-  const timeoutId = setTimeout(() => {
-    checkToken();
-  }, 500);
-
-  return () => clearTimeout(timeoutId);
-}, []);
-
+  // Handle token refresh when expired
   useEffect(() => {
-    async function refreshCookies() {
+    async function refreshTokens() {
+      if (!refreshToken) {
+        clearAuth();
+        router.push("/auth/login");
+        return;
+      }
       try {
-        const result = await handleRefreshToken();
-        if (result?.success) {
+        const result = await handleRefreshToken(refreshToken);
+        if (result?.success && result.accessToken && result.refreshToken) {
+          setTokens(result.accessToken, result.refreshToken);
           setRetry((prev) => !prev);
         } else {
+          clearAuth();
           router.push("/auth/login");
         }
       } catch (error) {
+        clearAuth();
         router.push("/auth/login");
       } finally {
         setIsExpired(false);
       }
     }
     if (isExpired) {
-      refreshCookies();
+      refreshTokens();
     }
-  }, [isExpired, router]);
+  }, [isExpired, router, refreshToken, clearAuth, setTokens]);
 
   useEffect(() => {
     async function fetchProfile() {
+      if (!accessToken) return;
       setIsLoading(true);
       setError(null);
       try {
-        const res = await handlegetProfile();
+        const res = await handlegetProfile(accessToken);
 
         if (!res.success) {
           if (res.message === "jwt expired") {
@@ -113,7 +109,7 @@ export default function ProfilePage() {
       }
     }
     fetchProfile();
-  }, [toggle, retry]);
+  }, [toggle, retry, accessToken, updateUser]);
 
   const handleImageSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,6 +149,8 @@ export default function ProfilePage() {
         setSelectedImageSrc(null);
       }
 
+      if (!accessToken) return;
+
       setIsUploadingImage(true);
       setUpdateError(null);
 
@@ -162,7 +160,7 @@ export default function ProfilePage() {
           type: "image/jpeg",
         });
 
-        const result = await handleUpdateIMageProfile(croppedFile);
+        const result = await handleUpdateIMageProfile(accessToken, croppedFile);
 
         if (result.success) {
           setUserData((prev) =>
@@ -185,7 +183,7 @@ export default function ProfilePage() {
         setIsUploadingImage(false);
       }
     },
-    [selectedImageSrc],
+    [selectedImageSrc, accessToken],
   );
 
   const handleCropperClose = useCallback(() => {
@@ -203,11 +201,13 @@ export default function ProfilePage() {
         return;
       }
 
+      if (!accessToken) return;
+
       setIsUpdating(true);
       setUpdateError(null);
 
       try {
-        const result = await handleUpdateUserInfo(userName.trim(), bio.trim());
+        const result = await handleUpdateUserInfo(accessToken, userName.trim(), bio.trim());
         console.log(result,"asdasdasxzczxc");
         if (result.success) {
           setUserData((prev) =>
@@ -227,7 +227,7 @@ export default function ProfilePage() {
         setIsUpdating(false);
       }
     },
-    [],
+    [accessToken],
   );
 
   const openEditProfile = useCallback(() => {
@@ -247,7 +247,7 @@ export default function ProfilePage() {
     setShowEditProfile(false);
   }, []);
 
-  if (!isAuthenticated || !user) {
+  if (!isHydrated || !isAuthenticated || !user) {
     return null;
   }
 

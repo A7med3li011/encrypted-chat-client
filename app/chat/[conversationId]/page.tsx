@@ -8,17 +8,14 @@ import { Button } from "@/components/ui/Button";
 import { ArrowLeft } from "lucide-react";
 import ChatInterface from "@/components/chat/ChatInterface";
 import { getConversationById } from "@/lib/action/conversation.action";
-import {
-  getAccessToken,
-  handleRefreshToken,
-} from "@/lib/action/auth.action";
+import { handleRefreshToken } from "@/lib/action/auth.action";
 
 export default function ChatPage() {
   const router = useRouter();
   const params = useParams();
   const conversationId = params.conversationId as string;
 
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, accessToken, refreshToken, clearAuth, setTokens, isHydrated } = useAuthStore();
   const { currentConversation, conversations, setCurrentConversation } =
     useChatStore();
 
@@ -30,35 +27,41 @@ export default function ChatPage() {
   const [isExpired, setIsExpired] = useState(false);
   const [retry, setRetry] = useState(false);
 
-  // Check for access token on mount
+  // Redirect if not authenticated
   useEffect(() => {
-    async function checkToken() {
-      const token = await getAccessToken();
-      if (!token) router.push("/auth/login");
+    if (isHydrated && (!isAuthenticated || !accessToken)) {
+      router.push("/auth/login");
     }
-    checkToken();
-  }, [router]);
+  }, [isAuthenticated, accessToken, router, isHydrated]);
 
   // Handle token refresh when expired
   useEffect(() => {
-    async function refreshCookies() {
+    async function refreshTokens() {
+      if (!refreshToken) {
+        clearAuth();
+        router.push("/auth/login");
+        return;
+      }
       try {
-        const result = await handleRefreshToken();
-        if (result?.success) {
+        const result = await handleRefreshToken(refreshToken);
+        if (result?.success && result.accessToken && result.refreshToken) {
+          setTokens(result.accessToken, result.refreshToken);
           setRetry((prev) => !prev);
         } else {
+          clearAuth();
           router.push("/auth/login");
         }
       } catch (error) {
+        clearAuth();
         router.push("/auth/login");
       } finally {
         setIsExpired(false);
       }
     }
     if (isExpired) {
-      refreshCookies();
+      refreshTokens();
     }
-  }, [isExpired, router]);
+  }, [isExpired, router, refreshToken, clearAuth, setTokens]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -116,7 +119,7 @@ export default function ChatPage() {
     router.push("/dashboard");
   };
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
     return null;
   }
 

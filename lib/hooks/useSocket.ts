@@ -1,13 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { socketService, ConnectionStatus } from "../socket/socket.service";
 import { useAuthStore } from "../store/useAuthStore";
-import { getAccessToken } from "../action/auth.action";
 
 export const useSocket = () => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     socketService.getConnectionStatus()
   );
   const user = useAuthStore((state) => state.user);
+  const accessToken = useAuthStore((state) => state.accessToken);
 
   useEffect(() => {
     // Listen for connection status changes
@@ -18,23 +18,12 @@ export const useSocket = () => {
     socketService.on("statusChange", handleStatusChange);
 
     // Auto-connect if user is authenticated and socket is not connected
-    if (user && !socketService.isConnected()) {
-      // Get token from HTTP-only cookie via server action
-      getAccessToken()
-        .then((token) => {
-          if (token) {
-            const serverUrl =
-              process.env.NEXT_PUBLIC_SOCKET_URL || "http://3.106.245.235:3003";
+    if (user && accessToken && !socketService.isConnected()) {
+      const serverUrl =
+        process.env.NEXT_PUBLIC_SOCKET_URL || "http://3.106.245.235:3003";
 
-            socketService.connect({ serverUrl, token });
-          } else {
-            console.error("❌ No token found in cookies");
-          }
-        })
-        .catch((error) => {
-          console.error("❌ Failed to get token:", error);
-        });
-    } else if (!user) {
+      socketService.connect({ serverUrl, token: accessToken });
+    } else if (!user || !accessToken) {
       console.log("⚠️ No user authenticated, skipping socket connection");
     } else {
       console.log("✅ Already connected, skipping auto-connect");
@@ -43,10 +32,10 @@ export const useSocket = () => {
     return () => {
       socketService.off("statusChange", handleStatusChange);
     };
-  }, [user]);
+  }, [user, accessToken]);
 
-  const connect = useCallback(async () => {
-    const token = await getAccessToken();
+  const connect = useCallback(() => {
+    const token = useAuthStore.getState().accessToken;
     if (!token) {
       console.error("Cannot connect: No token found");
       return;

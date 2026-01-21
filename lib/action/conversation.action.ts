@@ -1,12 +1,9 @@
 // Client-side conversation functions - no longer using server actions with cookies
+"use server"
 
-import { useAuthStore } from "@/lib/store/useAuthStore";
-
-// Helper to get token from store (for use in client components)
-const getToken = () => useAuthStore.getState().accessToken;
 
 export async function StartConversation(data: string, token?: string) {
-  const accessToken = token || getToken();
+  const accessToken = token;
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations/start`,
@@ -58,7 +55,7 @@ export async function StartConversation(data: string, token?: string) {
 }
 
 export async function getAllMyConversations(page: string, limit: string, token?: string) {
-  const accessToken = token || getToken();
+  const accessToken = token;
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations?page=${page}&limit=${limit}`,
@@ -107,7 +104,7 @@ export async function getAllMyConversations(page: string, limit: string, token?:
 }
 
 export async function getConversationById(id: string, token?: string) {
-  const accessToken = token || getToken();
+  const accessToken = token;
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}`,
@@ -155,7 +152,7 @@ export async function getConversationById(id: string, token?: string) {
 }
 
 export async function DeleteConversations(id: string, token?: string) {
-  const accessToken = token || getToken();
+  const accessToken = token;
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}`,

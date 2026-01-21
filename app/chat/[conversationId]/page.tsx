@@ -15,7 +15,7 @@ export default function ChatPage() {
   const params = useParams();
   const conversationId = params.conversationId as string;
 
-  const { isAuthenticated, accessToken, refreshToken, clearAuth, setTokens, isHydrated } = useAuthStore();
+  const { isAuthenticated, accessToken, refreshToken, clearAuth, setTokens } = useAuthStore();
   const { currentConversation, conversations, setCurrentConversation } =
     useChatStore();
 
@@ -29,10 +29,10 @@ export default function ChatPage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (isHydrated && (!isAuthenticated || !accessToken)) {
+    if (!isAuthenticated || !accessToken) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, accessToken, router, isHydrated]);
+  }, [isAuthenticated, accessToken, router]);
 
   // Handle token refresh when expired
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function ChatPage() {
     setError("");
 
     try {
-      const response = await getConversationById(conversationId);
+      const response = await getConversationById(conversationId, accessToken || undefined);
 
       if (!response.success || !response.data) {
         // Check for JWT expired error and trigger refresh
@@ -119,7 +119,7 @@ export default function ChatPage() {
     router.push("/dashboard");
   };
 
-  if (!isHydrated || !isAuthenticated) {
+  if (!isAuthenticated) {
     return null;
   }
 

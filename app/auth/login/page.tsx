@@ -13,27 +13,18 @@ import { LogIn, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuth, isAuthenticated, clearAuth, isHydrated } = useAuthStore();
-  const [isClient, setIsClient] = useState(false);
+  const { setAuth, isAuthenticated, clearAuth } = useAuthStore();
 
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   // Redirect if already authenticated
   useEffect(() => {
-    if (isHydrated && isAuthenticated) {
+    if (isAuthenticated) {
       router.push("/dashboard");
     }
-  }, [isAuthenticated, router, isHydrated]);
-
-  if (!isClient || !isHydrated) {
-    return null;
-  }
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

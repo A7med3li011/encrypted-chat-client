@@ -90,7 +90,11 @@ export default function ConversationsPage() {
     setError("");
 
     try {
-      const response = await getAllMyConversations("1", "50");
+      const response = await getAllMyConversations(
+        "1",
+        "50",
+        accessToken || undefined,
+      );
 
       if (!response.success) {
         if (response.message == "jwt expired") {
@@ -141,7 +145,10 @@ export default function ConversationsPage() {
     setIsDeleting(true);
 
     try {
-      const response = await DeleteConversations(conversationToDelete);
+      const response = await DeleteConversations(
+        conversationToDelete,
+        accessToken || undefined,
+      );
 
       if (!response.success) {
         showToast(response.message || "Failed to delete conversation", "error");

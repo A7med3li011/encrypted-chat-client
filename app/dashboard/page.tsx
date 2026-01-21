@@ -22,8 +22,7 @@ interface NavItem {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, clearAuth, accessToken, isHydrated } =
-    useAuthStore();
+  const { user, isAuthenticated, clearAuth, accessToken } = useAuthStore();
   const { showToast } = useToast();
 
   const [showQrCode, setShowQrCode] = useState(false);
@@ -34,10 +33,10 @@ export default function DashboardPage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (isHydrated && (!isAuthenticated || !accessToken)) {
+    if (!isAuthenticated || !accessToken) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, accessToken, router, isHydrated]);
+  }, [isAuthenticated, accessToken, router]);
 
   useEffect(() => {
     async function fetchQrData() {
@@ -108,7 +107,7 @@ export default function DashboardPage() {
     },
   ];
 
-  if (!isHydrated || !isAuthenticated) {
+  if (!isAuthenticated) {
     return null;
   }
 

@@ -270,7 +270,8 @@ export default function ScanQRPage() {
 
     setIsStartingConversation(true);
     try {
-      const response = await StartConversation(scannedAccountId);
+      const { accessToken } = useAuthStore.getState();
+      const response = await StartConversation(scannedAccountId, accessToken || undefined);
 
       if (!response.success) {
         showToast(response.message || "Failed to start conversation", "error");

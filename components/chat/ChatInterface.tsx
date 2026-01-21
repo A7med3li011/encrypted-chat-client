@@ -26,7 +26,7 @@ export default function ChatInterface() {
     prependMessages,
     updateMessage,
   } = useChatStore();
-  const user = useAuthStore((state) => state.user);
+  const { user, accessToken } = useAuthStore();
   const socket = useSocket();
 
   const [messageText, setMessageText] = useState("");
@@ -189,6 +189,7 @@ export default function ChatInterface() {
         currentConversation._id,
         1,
         MESSAGES_PER_PAGE,
+        accessToken || undefined,
       );
 
       if (response.success && response.data) {
@@ -228,6 +229,7 @@ export default function ChatInterface() {
         currentConversation._id,
         nextPage,
         MESSAGES_PER_PAGE,
+        accessToken || undefined,
       );
 
       if (response.success && response.data) {
@@ -335,7 +337,7 @@ export default function ChatInterface() {
     tempId?: string,
   ) => {
     try {
-      const response = await sendMessage(conversationId, content);
+      const response = await sendMessage(conversationId, content, accessToken || undefined);
 
       if (response.success && response.data) {
         if (tempId) {

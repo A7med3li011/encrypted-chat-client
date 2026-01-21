@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, updateUser, clearAuth, accessToken, refreshToken, setTokens, isHydrated } = useAuthStore();
+  const { user, isAuthenticated, updateUser, clearAuth, accessToken, refreshToken, setTokens } = useAuthStore();
 
   const [showQrCode, setShowQrCode] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -40,10 +40,10 @@ export default function ProfilePage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (isHydrated && (!isAuthenticated || !accessToken)) {
+    if (!isAuthenticated || !accessToken) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, accessToken, router, isHydrated]);
+  }, [isAuthenticated, accessToken, router]);
 
   // Handle token refresh when expired
   useEffect(() => {
@@ -247,7 +247,7 @@ export default function ProfilePage() {
     setShowEditProfile(false);
   }, []);
 
-  if (!isHydrated || !isAuthenticated || !user) {
+  if (!isAuthenticated || !user) {
     return null;
   }
 

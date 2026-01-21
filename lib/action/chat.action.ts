@@ -1,9 +1,9 @@
 // Client-side chat functions - no longer using server actions with cookies
+"use server"
 
-import { useAuthStore } from "@/lib/store/useAuthStore";
 
 // Helper to get token from store (for use in client components)
-const getToken = () => useAuthStore.getState().accessToken;
+
 
 export async function getMessages(
   conversationId: string,
@@ -11,7 +11,7 @@ export async function getMessages(
   limit = 10,
   token?: string,
 ) {
-  const accessToken = token || getToken();
+  const accessToken = token 
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/messages/conversation/${conversationId}?page=${page}&limit=${limit}`,
@@ -64,7 +64,7 @@ export async function sendMessage(
   content: string,
   token?: string,
 ) {
-  const accessToken = token || getToken();
+  const accessToken = token 
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/messages`,

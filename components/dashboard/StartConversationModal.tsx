@@ -7,6 +7,7 @@ import { Button } from "../ui/Button";
 
 import { AlertCircle, UserPlus } from "lucide-react";
 import { StartConversation } from "@/lib/action/conversation.action";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 
 interface StartConversationModalProps {
   isOpen: boolean;
@@ -38,7 +39,8 @@ export const StartConversationModal: React.FC<StartConversationModalProps> = ({
     setError("");
 
     try {
-      const res = await StartConversation(accountId.trim());
+      const { accessToken } = useAuthStore.getState();
+      const res = await StartConversation(accountId.trim(), accessToken || undefined);
 
       if (!res.success) {
         // Handle failure response

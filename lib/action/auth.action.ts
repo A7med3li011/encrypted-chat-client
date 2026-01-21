@@ -1,5 +1,5 @@
-// Client-side auth functions - no longer using server actions with cookies
 
+"use server"
 interface RegisterData {
   userName: string;
   location: string;

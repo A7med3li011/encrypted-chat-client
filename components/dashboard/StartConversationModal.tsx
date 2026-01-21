@@ -93,7 +93,7 @@ export const StartConversationModal: React.FC<StartConversationModalProps> = ({
               setError("");
               setFoundUser(null);
             }}
-            helperText="Enter the 12-character Account ID of the person you want to chat with"
+            helperText="Enter the 24-character Account ID of the person you want to chat with"
           />
         </div>
 
@@ -108,7 +108,7 @@ export const StartConversationModal: React.FC<StartConversationModalProps> = ({
             disabled={!accountId.trim()}
             className="flex-1 flex items-center justify-center gap-2"
           >
-            <UserPlus size={16} />
+            
             Start Conversation
           </Button>
         </div>

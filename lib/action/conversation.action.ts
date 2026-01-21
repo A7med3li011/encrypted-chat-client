@@ -1,6 +1,5 @@
 // Client-side conversation functions - no longer using server actions with cookies
-"use server"
-
+"use server";
 
 export async function StartConversation(data: string, token?: string) {
   const accessToken = token;
@@ -16,7 +15,7 @@ export async function StartConversation(data: string, token?: string) {
         body: JSON.stringify({
           targetAccountId: data,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -33,7 +32,7 @@ export async function StartConversation(data: string, token?: string) {
     }
 
     const result = await response.json();
-
+    console.log(result);
     return {
       data: result.data || {},
 
@@ -54,7 +53,11 @@ export async function StartConversation(data: string, token?: string) {
   }
 }
 
-export async function getAllMyConversations(page: string, limit: string, token?: string) {
+export async function getAllMyConversations(
+  page: string,
+  limit: string,
+  token?: string,
+) {
   const accessToken = token;
   try {
     const response = await fetch(
@@ -65,7 +68,7 @@ export async function getAllMyConversations(page: string, limit: string, token?:
           authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -114,7 +117,7 @@ export async function getConversationById(id: string, token?: string) {
           authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -162,7 +165,7 @@ export async function DeleteConversations(id: string, token?: string) {
           authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {

@@ -21,7 +21,8 @@ import { handleRefreshToken } from "@/lib/action/auth.action";
 
 export default function ConversationsPage() {
   const router = useRouter();
-  const { isAuthenticated, clearAuth, accessToken, refreshToken, setTokens } = useAuthStore();
+  const { isAuthenticated, clearAuth, accessToken, refreshToken, setTokens } =
+    useAuthStore();
   const {
     conversations,
     currentConversation,
@@ -35,10 +36,25 @@ export default function ConversationsPage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    const stored = localStorage.getItem("auth-storage");
+
+    if (!stored) {
+      router.push("/auth/login");
+      return;
+    }
+
+    let auth;
+    try {
+      auth = JSON.parse(stored);
+    } catch (err) {
+      router.push("/auth/login");
+      return;
+    }
+
+    if (!auth?.state?.accessToken) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, accessToken, router]);
+  }, [router]);
 
   // Handle token refresh when expired
   useEffect(() => {
@@ -68,7 +84,7 @@ export default function ConversationsPage() {
       refreshTokens();
     }
   }, [isExpired, router, refreshToken, clearAuth, setTokens]);
-  
+
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [showStartConversation, setShowStartConversation] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);

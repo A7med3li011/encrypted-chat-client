@@ -33,10 +33,25 @@ export default function DashboardPage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    const stored = localStorage.getItem("auth-storage");
+
+    if (!stored) {
+      router.push("/auth/login");
+      return;
+    }
+
+    let auth;
+    try {
+      auth = JSON.parse(stored);
+    } catch (err) {
+      router.push("/auth/login");
+      return;
+    }
+
+    if (!auth?.state?.accessToken) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, accessToken, router]);
+  }, [router]);
 
   useEffect(() => {
     async function fetchQrData() {

@@ -9,8 +9,6 @@ import logoImage from "../../public/assets/bond_logo.png";
 import {
   handleLogout as logoutAction,
   handlegetProfile,
-  getAccessToken,
-  clearCookies,
 } from "@/lib/action/auth.action";
 import { useToast } from "@/components/ui/Toast";
 import Image from "next/image";
@@ -24,7 +22,8 @@ interface NavItem {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { user, isAuthenticated, clearAuth, accessToken, isHydrated } =
+    useAuthStore();
   const { showToast } = useToast();
 
   const [showQrCode, setShowQrCode] = useState(false);
@@ -33,28 +32,18 @@ export default function DashboardPage() {
     accountId?: string;
   }>({});
 
- useEffect(() => {
-  const checkToken = async () => {
-    const token = await getAccessToken();
-
-    if (!token) {
-      clearAuth();
-      await  clearCookies();
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (isHydrated && (!isAuthenticated || !accessToken)) {
       router.push("/auth/login");
     }
-  };
-
-  const timeoutId = setTimeout(() => {
-    checkToken();
-  }, 500);
-
-  return () => clearTimeout(timeoutId);
-}, []);
+  }, [isAuthenticated, accessToken, router, isHydrated]);
 
   useEffect(() => {
     async function fetchQrData() {
+      if (!accessToken) return;
       try {
-        const res = await handlegetProfile();
+        const res = await handlegetProfile(accessToken);
         setQrData({
           imageQr: res?.data?.accountIdQR,
           accountId: res?.data?.accountId,
@@ -64,18 +53,20 @@ export default function DashboardPage() {
       }
     }
     fetchQrData();
-  }, []);
+  }, [accessToken]);
 
   const handleLogout = async () => {
     try {
-      const response = await logoutAction();
+      if (accessToken) {
+        const response = await logoutAction(accessToken);
 
-      if (!response.success) {
-        showToast(response.error?.message || "Failed to logout", "error");
-        return;
+        if (!response.success) {
+          showToast(response.error?.message || "Failed to logout", "error");
+        } else {
+          showToast(response.message || "Logged out successfully", "success");
+        }
       }
 
-      showToast(response.message || "Logged out successfully", "success");
       clearAuth();
       router.push("/auth/login");
     } catch (error) {
@@ -117,7 +108,7 @@ export default function DashboardPage() {
     },
   ];
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
     return null;
   }
 

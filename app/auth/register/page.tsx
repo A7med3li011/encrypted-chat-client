@@ -35,7 +35,7 @@ const getDeviceType = (): string => {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { setAuth, isAuthenticated } = useAuthStore();
 
   const [formData, setFormData] = useState({
     userName: "",
@@ -52,6 +52,13 @@ export default function RegisterPage() {
     recoveryPassword: string;
     recoveryPasswordQR: string;
   } | null>(null);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !showSuccess) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, showSuccess, router]);
 
   // Auto-detect location and device type on component mount
   useEffect(() => {
@@ -168,14 +175,16 @@ export default function RegisterPage() {
         recoveryPasswordQR: response.data.recoveryPasswordQR,
       });
 
-      // Set auth state with user data
-      // Tokens are stored in HTTP-only cookies on the server side
-      setAuth({
-        accountId: response.data.accountId,
-        userName: response.data.userName,
-
-        role: "user",
-      });
+      // Set auth state with user data and tokens
+      setAuth(
+        {
+          accountId: response.data.accountId,
+          userName: response.data.userName,
+          role: "user",
+        },
+        response.accessToken,
+        response.refreshToken,
+      );
 
       // Show success modal
       setShowSuccess(true);

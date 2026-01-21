@@ -1,15 +1,19 @@
-"use server";
-import { cookies } from "next/headers";
+// Client-side conversation functions - no longer using server actions with cookies
 
-export async function StartConversation(data: string) {
-  const cookiee = await cookies();
+import { useAuthStore } from "@/lib/store/useAuthStore";
+
+// Helper to get token from store (for use in client components)
+const getToken = () => useAuthStore.getState().accessToken;
+
+export async function StartConversation(data: string, token?: string) {
+  const accessToken = token || getToken();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations/start`,
       {
         method: "POST",
         headers: {
-          authorization: `Bearer ${cookiee.get("accessToken")?.value}`,
+          authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -52,15 +56,16 @@ export async function StartConversation(data: string) {
     };
   }
 }
-export async function getAllMyConversations(page: string, limit: string) {
-  const cookiee = await cookies();
+
+export async function getAllMyConversations(page: string, limit: string, token?: string) {
+  const accessToken = token || getToken();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations?page=${page}&limit=${limit}`,
       {
-        method: "Get",
+        method: "GET",
         headers: {
-          authorization: `Bearer ${cookiee.get("accessToken")?.value}`,
+          authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
       }
@@ -100,15 +105,16 @@ export async function getAllMyConversations(page: string, limit: string) {
     };
   }
 }
-export async function getConversationById(id: string) {
-  const cookiee = await cookies();
+
+export async function getConversationById(id: string, token?: string) {
+  const accessToken = token || getToken();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}`,
       {
         method: "GET",
         headers: {
-          authorization: `Bearer ${cookiee.get("accessToken")?.value}`,
+          authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
       }
@@ -148,15 +154,15 @@ export async function getConversationById(id: string) {
   }
 }
 
-export async function DeleteConversations(id: string) {
-  const cookiee = await cookies();
+export async function DeleteConversations(id: string, token?: string) {
+  const accessToken = token || getToken();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/conversations/${id}`,
       {
-        method: "Delete",
+        method: "DELETE",
         headers: {
-          authorization: `Bearer ${cookiee.get("accessToken")?.value}`,
+          authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
       }
@@ -169,7 +175,7 @@ export async function DeleteConversations(id: string) {
         success: false,
         message: result.message,
         error: {
-          message: `Failed to load conversation: ${response.statusText}`,
+          message: `Failed to delete conversation: ${response.statusText}`,
           status: response.status,
         },
       };

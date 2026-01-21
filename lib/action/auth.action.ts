@@ -1,6 +1,4 @@
-"use server";
-
-import { cookies } from "next/headers";
+// Client-side auth functions - no longer using server actions with cookies
 
 interface RegisterData {
   userName: string;
@@ -19,8 +17,9 @@ interface AuthResponse {
     accountId: string;
     userName: string;
     accountIdQR: string;
-    recoveryPassword?: string; // Only present in register response
-    recoveryPasswordQR?: string; // Only present in register response
+    profilePic?: string;
+    recoveryPassword?: string;
+    recoveryPasswordQR?: string;
   };
   accessToken: string;
   refreshToken: string;
@@ -30,6 +29,8 @@ interface ActionResponse {
   data: any;
   message?: string;
   success: boolean;
+  accessToken?: string;
+  refreshToken?: string;
   error: {
     message: string;
     status: number;
@@ -39,7 +40,6 @@ interface ActionResponse {
 export async function handleRegister(
   data: RegisterData,
 ): Promise<ActionResponse> {
-  const cookiee = await cookies();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
@@ -68,23 +68,13 @@ export async function handleRegister(
 
     const result: AuthResponse = await response.json();
 
-    // Store tokens in HTTP-only cookies (secure, not accessible via JavaScript)
-    cookiee.set("accessToken", result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
-    cookiee.set("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
+    // Return tokens to be stored by the caller
     return {
       data: result.data || {},
       message: result.message,
       success: true,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       error: null,
     };
   } catch (err) {
@@ -101,7 +91,6 @@ export async function handleRegister(
 }
 
 export async function handleLogin(data: LoginData): Promise<ActionResponse> {
-  const cookiee = await cookies();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
@@ -129,23 +118,13 @@ export async function handleLogin(data: LoginData): Promise<ActionResponse> {
 
     const result: AuthResponse = await response.json();
 
-    // Store tokens in HTTP-only cookies (secure, not accessible via JavaScript)
-    cookiee.set("accessToken", result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
-    cookiee.set("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
+    // Return tokens to be stored by the caller
     return {
       data: result.data || {},
       message: result.message,
       success: true,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       error: null,
     };
   } catch (err) {
@@ -161,9 +140,7 @@ export async function handleLogin(data: LoginData): Promise<ActionResponse> {
   }
 }
 
-export async function handleLogout() {
-  const token = (await cookies()).get("accessToken")?.value || "";
-
+export async function handleLogout(token: string) {
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`,
@@ -176,8 +153,6 @@ export async function handleLogout() {
       },
     );
 
-    await (await cookies()).delete("accessToken");
-    await (await cookies()).delete("refreshToken");
     if (!response.ok) {
       const result = await response.json();
       return {
@@ -210,9 +185,8 @@ export async function handleLogout() {
     };
   }
 }
-export async function handlegetProfile() {
-  const token = (await cookies()).get("accessToken")?.value || "";
 
+export async function handlegetProfile(token: string) {
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/users/profile`,
@@ -232,7 +206,7 @@ export async function handlegetProfile() {
         success: false,
         message: result.message,
         error: {
-          message: `Failed to logout: ${response.statusText}`,
+          message: `Failed to get profile: ${response.statusText}`,
           status: response.status,
         },
       };
@@ -258,11 +232,9 @@ export async function handlegetProfile() {
     };
   }
 }
-export async function handleUpdateIMageProfile(data) {
-  const token = (await cookies()).get("accessToken")?.value || "";
 
+export async function handleUpdateIMageProfile(token: string, data: File) {
   const formData = new FormData();
-
   formData.append("profileImage", data);
 
   try {
@@ -310,9 +282,8 @@ export async function handleUpdateIMageProfile(data) {
     };
   }
 }
-export async function handleUpdateUserInfo(userName: string, bio: string) {
-  const token = (await cookies()).get("accessToken")?.value || "";
 
+export async function handleUpdateUserInfo(token: string, userName: string, bio: string) {
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/users/profile/info`,
@@ -362,10 +333,8 @@ export async function handleUpdateUserInfo(userName: string, bio: string) {
     };
   }
 }
-export async function handleRefreshToken() {
-  const cookiee = await cookies();
-  const token = cookiee.get("refreshToken")?.value || "";
 
+export async function handleRefreshToken(refreshToken: string): Promise<ActionResponse> {
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
@@ -375,33 +344,32 @@ export async function handleRefreshToken() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          refreshToken: token,
+          refreshToken: refreshToken,
         }),
       },
     );
 
     if (!response.ok) {
       const result = await response.json();
-      cookiee.delete("accessToken");
-      cookiee.delete("refreshToken");
       return {
         data: null,
         success: false,
         message: result.message,
         error: {
-          message: `Failed to update refreshToken: ${response.statusText}`,
+          message: `Failed to refresh token: ${response.statusText}`,
           status: response.status,
         },
       };
     }
 
     const result = await response.json();
-    cookiee.set("refreshToken", result.refreshToken);
-    cookiee.set("accessToken", result.accessToken);
+
     return {
       data: result.data || null,
       message: result.message,
       success: true,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       error: null,
     };
   } catch (err) {
@@ -415,14 +383,4 @@ export async function handleRefreshToken() {
       },
     };
   }
-}
-
-// Server action to get access token from HTTP-only cookie for socket connection
-export async function getAccessToken(): Promise<string | null> {
-  const token = (await cookies()).get("accessToken")?.value || null;
-  return token;
-}
-export async function clearCookies() {
-  (await cookies()).delete("accessToken");
-  (await cookies()).delete("refreshToken");
 }

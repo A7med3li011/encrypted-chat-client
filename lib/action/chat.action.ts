@@ -1,20 +1,24 @@
-"use server";
+// Client-side chat functions - no longer using server actions with cookies
 
-import { cookies } from "next/headers";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+
+// Helper to get token from store (for use in client components)
+const getToken = () => useAuthStore.getState().accessToken;
 
 export async function getMessages(
   conversationId: string,
   page = 1,
   limit = 10,
+  token?: string,
 ) {
-  const cookiee = await cookies();
+  const accessToken = token || getToken();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/messages/conversation/${conversationId}?page=${page}&limit=${limit}`,
       {
         method: "GET",
         headers: {
-          authorization: `Bearer ${cookiee.get("accessToken")?.value}`,
+          authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
       },
@@ -54,15 +58,20 @@ export async function getMessages(
     };
   }
 }
-export async function sendMessage(conversationId: string, content: string) {
-  const cookiee = await cookies();
+
+export async function sendMessage(
+  conversationId: string,
+  content: string,
+  token?: string,
+) {
+  const accessToken = token || getToken();
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/messages`,
       {
         method: "POST",
         headers: {
-          authorization: `Bearer ${cookiee.get("accessToken")?.value}`,
+          authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ conversationId, content, messageType: "text" }),
@@ -77,7 +86,7 @@ export async function sendMessage(conversationId: string, content: string) {
         success: false,
         message: result.message,
         error: {
-          message: `Failed to load messages: ${response.statusText}`,
+          message: `Failed to send message: ${response.statusText}`,
           status: response.status,
         },
       };

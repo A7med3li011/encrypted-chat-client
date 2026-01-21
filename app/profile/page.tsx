@@ -19,9 +19,16 @@ import {
 } from "./components";
 import { useRouter } from "next/navigation";
 
-
 export default function ProfilePage() {
-  const { user, isAuthenticated, updateUser, clearAuth, accessToken, refreshToken, setTokens } = useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    updateUser,
+    clearAuth,
+    accessToken,
+    refreshToken,
+    setTokens,
+  } = useAuthStore();
 
   const [showQrCode, setShowQrCode] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -40,11 +47,25 @@ export default function ProfilePage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    const stored = localStorage.getItem("auth-storage");
+
+    if (!stored) {
+      router.push("/auth/login");
+      return;
+    }
+
+    let auth;
+    try {
+      auth = JSON.parse(stored);
+    } catch (err) {
+      router.push("/auth/login");
+      return;
+    }
+
+    if (!auth?.state?.accessToken) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, accessToken, router]);
-
+  }, [router]);
   // Handle token refresh when expired
   useEffect(() => {
     async function refreshTokens() {
@@ -142,7 +163,7 @@ export default function ProfilePage() {
   const handleCropComplete = useCallback(
     async (croppedImageBlob: Blob) => {
       setShowImageCropper(false);
-      
+
       // Cleanup the object URL
       if (selectedImageSrc) {
         URL.revokeObjectURL(selectedImageSrc);
@@ -207,8 +228,12 @@ export default function ProfilePage() {
       setUpdateError(null);
 
       try {
-        const result = await handleUpdateUserInfo(accessToken, userName.trim(), bio.trim());
-        console.log(result,"asdasdasxzczxc");
+        const result = await handleUpdateUserInfo(
+          accessToken,
+          userName.trim(),
+          bio.trim(),
+        );
+        console.log(result, "asdasdasxzczxc");
         if (result.success) {
           setUserData((prev) =>
             prev

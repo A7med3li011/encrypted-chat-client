@@ -46,7 +46,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     );
   }
   console.log(conversations);
- 
+
   return (
     <div className="space-y-2">
       {conversations.map((conversation) => {
@@ -83,7 +83,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     <h3 className="font-semibold text-gray-100 truncate">
                       {otherParticipant?.userName || "Unknown User"}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate   w-40">
                       {conversation.lastMessage?.content || "No messages yet"}
                     </p>
                   </div>

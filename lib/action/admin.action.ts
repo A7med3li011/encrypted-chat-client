@@ -305,6 +305,12 @@ export async function setMessageVisibility(token: string, messageId: string, isH
   });
 }
 
+export async function unhideAllMessages(token: string, conversationId: string) {
+  return apiCall(`/admin/conversations/${conversationId}/unhide-all`, token, {
+    method: "PATCH",
+  });
+}
+
 export async function getMessageEditHistory(token: string, messageId: string) {
   return apiCall(`/admin/messages/${messageId}/edit-history`, token);
 }

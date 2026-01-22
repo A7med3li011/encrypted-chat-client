@@ -309,6 +309,10 @@ export async function getMessageEditHistory(token: string, messageId: string) {
   return apiCall(`/admin/messages/${messageId}/edit-history`, token);
 }
 
+export async function decryptMessage(token: string, messageId: string) {
+  return apiCall(`/admin/messages/${messageId}/decrypt`, token);
+}
+
 // ============ AUDIT LOGS ============
 
 interface GetAuditLogsParams {

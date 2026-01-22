@@ -12,6 +12,7 @@ import {
   deleteMessage,
   setMessageVisibility,
   getMessageEditHistory,
+  decryptMessage,
 } from "@/lib/action/admin.action";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -139,6 +140,8 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
   const [pagination, setPagination] = useState<any>(null);
   const [showHidden, setShowHidden] = useState(false);
   const [editHistoryMessageId, setEditHistoryMessageId] = useState<string | null>(null);
+  const [decryptedMessages, setDecryptedMessages] = useState<Record<string, string>>({});
+  const [decryptingMessageId, setDecryptingMessageId] = useState<string | null>(null);
   const { showToast } = useToast();
 
   const fetchMessages = useCallback(async () => {
@@ -178,16 +181,29 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
     }
   };
 
-  const handleToggleVisibility = async (messageId: string, currentlyHidden: boolean) => {
-    const response = await setMessageVisibility(accessToken, messageId, !currentlyHidden);
-    if (response.success) {
-      setMessages((prev) =>
-        prev.map((m) => (m._id === messageId ? { ...m, isHidden: !currentlyHidden } : m))
-      );
-      showToast(`Message ${!currentlyHidden ? "hidden" : "shown"}`, "success");
-    } else {
-      showToast(response.error?.message || "Failed to update message visibility", "error");
+  const handleToggleDecrypt = async (messageId: string) => {
+    // If already decrypted, hide it (remove from decrypted state)
+    if (decryptedMessages[messageId]) {
+      setDecryptedMessages((prev: Record<string, string>) => {
+        const newState = { ...prev };
+        delete newState[messageId];
+        return newState;
+      });
+      return;
     }
+
+    // Decrypt the message
+    setDecryptingMessageId(messageId);
+    const response = await decryptMessage(accessToken, messageId);
+    if (response.success && response.data) {
+      setDecryptedMessages((prev: Record<string, string>) => ({
+        ...prev,
+        [messageId]: (response.data as any).content,
+      }));
+    } else {
+      showToast(response.error?.message || "Failed to decrypt message", "error");
+    }
+    setDecryptingMessageId(null);
   };
 
   const filteredMessages = showHidden ? messages : messages.filter((m: Message) => !(m as any).isHidden);
@@ -277,9 +293,15 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
                             [{message.messageType}]
                           </span>
                           {message.encryptedContent ? (
-                            <p className="text-sm text-gray-300 mt-1 break-all font-mono text-xs">
-                              [Encrypted content]
-                            </p>
+                            decryptedMessages[message._id] ? (
+                              <p className="text-sm text-gray-200 mt-1 break-words">
+                                {decryptedMessages[message._id]}
+                              </p>
+                            ) : (
+                              <p className="text-sm text-gray-500 italic mt-1">
+                                [Encrypted content]
+                              </p>
+                            )
                           ) : (
                             <p className="text-sm text-gray-500 italic mt-1">
                               Content not available (metadata only)
@@ -298,15 +320,22 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
                           </button>
                         )}
                         <button
-                          onClick={() => handleToggleVisibility(message._id, isHidden)}
+                          onClick={() => handleToggleDecrypt(message._id)}
+                          disabled={decryptingMessageId === message._id}
                           className={`p-1.5 rounded transition-colors ${
-                            isHidden
-                              ? "text-purple-400 hover:bg-purple-500/20"
+                            decryptedMessages[message._id]
+                              ? "text-green-400 hover:bg-green-500/20"
                               : "text-gray-400 hover:bg-gray-600"
-                          }`}
-                          title={isHidden ? "Show Message" : "Hide Message"}
+                          } ${decryptingMessageId === message._id ? "opacity-50" : ""}`}
+                          title={decryptedMessages[message._id] ? "Hide Content" : "Decrypt & Show Content"}
                         >
-                          {isHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                          {decryptingMessageId === message._id ? (
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : decryptedMessages[message._id] ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
                         </button>
                         <button
                           onClick={() => handleFlagMessage(message._id, !message.flagged)}

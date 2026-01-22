@@ -256,21 +256,19 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
               {showHidden ? <Eye size={14} /> : <EyeOff size={14} />}
               {showHidden ? "Showing All" : "Show Hidden"}
             </button>
-            {hiddenCount > 0 && (
-              <button
-                onClick={handleUnhideAllMessages}
-                disabled={unhidingAll}
-                className="px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 disabled:opacity-50"
-                title="Unhide all hidden messages in this conversation"
-              >
-                {unhidingAll ? (
-                  <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Eye size={14} />
-                )}
-                Unhide All ({hiddenCount})
-              </button>
-            )}
+            <button
+              onClick={handleUnhideAllMessages}
+              disabled={unhidingAll}
+              className="px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 disabled:opacity-50"
+              title="Unhide all hidden messages in this conversation"
+            >
+              {unhidingAll ? (
+                <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Eye size={14} />
+              )}
+              Unhide All ({hiddenCount})
+            </button>
             <button onClick={onClose} className="text-gray-400 hover:text-white">
               <X size={20} />
             </button>

@@ -22,7 +22,7 @@ interface NavItem {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, clearAuth, accessToken } = useAuthStore();
+  const { user, isAuthenticated, clearAuth, accessToken, updateUser } = useAuthStore();
   const { showToast } = useToast();
 
   const [showQrCode, setShowQrCode] = useState(false);
@@ -54,20 +54,29 @@ export default function DashboardPage() {
   }, [router]);
 
   useEffect(() => {
-    async function fetchQrData() {
+    async function fetchProfileData() {
       if (!accessToken) return;
       try {
         const res = await handlegetProfile(accessToken);
-        setQrData({
-          imageQr: res?.data?.accountIdQR,
-          accountId: res?.data?.accountId,
-        });
+        if (res?.success && res?.data) {
+          setQrData({
+            imageQr: res.data.accountIdQR,
+            accountId: res.data.accountId,
+          });
+          // Update user data in store to ensure role and profilePic are current
+          updateUser({
+            accountId: res.data.accountId,
+            userName: res.data.userName,
+            profilePic: res.data.profilePic,
+            role: res.data.role,
+          });
+        }
       } catch (err) {
-        console.error("Failed to load QR data:", err);
+        console.error("Failed to load profile data:", err);
       }
     }
-    fetchQrData();
-  }, [accessToken]);
+    fetchProfileData();
+  }, [accessToken, updateUser]);
 
   const handleLogout = async () => {
     try {

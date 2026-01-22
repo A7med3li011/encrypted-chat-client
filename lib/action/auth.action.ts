@@ -18,6 +18,8 @@ interface AuthResponse {
     userName: string;
     accountIdQR: string;
     profilePic?: string;
+    role?: string;
+    bio?: string;
     recoveryPassword?: string;
     recoveryPasswordQR?: string;
   };

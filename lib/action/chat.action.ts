@@ -113,3 +113,57 @@ export async function sendMessage(
     };
   }
 }
+
+export async function editMessage(
+  messageId: string,
+  content: string,
+  token?: string,
+) {
+  const accessToken = token;
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/messages/${messageId}/edit`,
+      {
+        method: "PATCH",
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      },
+    );
+
+    if (!response.ok) {
+      const result = await response.json();
+
+      return {
+        data: null,
+        success: false,
+        message: result.message,
+        error: {
+          message: result.message || `Failed to edit message: ${response.statusText}`,
+          status: response.status,
+        },
+      };
+    }
+
+    const result = await response.json();
+
+    return {
+      data: result.data || {},
+      message: result.message,
+      success: true,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
+        status: 500,
+      },
+    };
+  }
+}

@@ -153,9 +153,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Logo */}
           <div className="flex items-center justify-between px-4 py-5 border-b border-gray-700">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Shield size={18} className="text-white" />
-              </div>
+              <img
+                src="/assets/bond_logo.jpeg"
+                alt="Bond Logo"
+                className="w-8 h-8 rounded-lg object-cover"
+              />
               <span className="text-lg font-semibold text-white">Admin Panel</span>
             </div>
             <button
@@ -169,11 +171,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* User info */}
           <div className="px-4 py-4 border-b border-gray-700">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium">
-                  {user?.userName?.[0]?.toUpperCase() || "A"}
-                </span>
-              </div>
+              {user?.profilePic ? (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_SOCKET_URL}${user.profilePic}`}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium">
+                    {user?.userName?.[0]?.toUpperCase() || "A"}
+                  </span>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">
                   {user?.userName || "Admin"}

@@ -94,6 +94,20 @@ export default function ChatInterface() {
       } as any);
     };
 
+    // Handle message edited
+    const handleMessageEdited = (data: {
+      messageId: string;
+      content: string;
+      isEdited: boolean;
+      editedAt: string;
+    }) => {
+      updateMessage(data.messageId, {
+        content: data.content,
+        isEdited: data.isEdited,
+        editedAt: data.editedAt,
+      } as any);
+    };
+
     // Handle presence updates
     const handlePresenceUpdate = (data: {
       accountId: string;
@@ -111,6 +125,7 @@ export default function ChatInterface() {
     socket.on("message:status", handleMessageStatus);
     socket.on("typing:update", handleTypingUpdate);
     socket.on("message:deleted", handleMessageDeleted);
+    socket.on("message:edited", handleMessageEdited);
     socket.on("presence:update", handlePresenceUpdate);
 
     // Cleanup
@@ -120,6 +135,7 @@ export default function ChatInterface() {
       socket.off("message:status", handleMessageStatus);
       socket.off("typing:update", handleTypingUpdate);
       socket.off("message:deleted", handleMessageDeleted);
+      socket.off("message:edited", handleMessageEdited);
       socket.off("presence:update", handlePresenceUpdate);
     };
     // Only re-register listeners when conversation changes or socket instance changes

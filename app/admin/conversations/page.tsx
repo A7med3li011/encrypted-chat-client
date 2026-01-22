@@ -10,6 +10,8 @@ import {
   getConversationMessages,
   flagMessage,
   deleteMessage,
+  setMessageVisibility,
+  getMessageEditHistory,
 } from "@/lib/action/admin.action";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -20,10 +22,13 @@ import {
   ChevronRight,
   X,
   Eye,
+  EyeOff,
   Flag,
   AlertTriangle,
   User,
   Eraser,
+  History,
+  Pencil,
 } from "lucide-react";
 
 interface MessagesModalProps {
@@ -32,11 +37,108 @@ interface MessagesModalProps {
   accessToken: string;
 }
 
+interface EditHistoryItem {
+  version: number;
+  content: string;
+  editedAt: string;
+}
+
+interface EditHistoryData {
+  _id: string;
+  currentContent: string;
+  isEdited: boolean;
+  editedAt?: string;
+  createdAt: string;
+  editHistory: EditHistoryItem[];
+  totalEdits: number;
+  senderId: { userName: string; accountId: string };
+}
+
+function EditHistoryModal({ messageId, accessToken, onClose }: { messageId: string; accessToken: string; onClose: () => void }) {
+  const [data, setData] = useState<EditHistoryData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setLoading(true);
+      const response = await getMessageEditHistory(accessToken, messageId);
+      if (response.success && response.data) {
+        setData(response.data as EditHistoryData);
+      }
+      setLoading(false);
+    };
+    fetchHistory();
+  }, [accessToken, messageId]);
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
+      <div className="bg-gray-800 rounded-xl w-full max-w-lg max-h-[70vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <History size={20} className="text-blue-400" />
+            <h3 className="text-lg font-semibold text-white">Edit History</h3>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : !data ? (
+            <div className="text-center py-8 text-gray-400">Failed to load edit history</div>
+          ) : (
+            <div className="space-y-4">
+              {/* Current Version */}
+              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-green-400">Current Version</span>
+                  <span className="text-xs text-gray-500">
+                    {data.isEdited ? `Edited ${new Date(data.editedAt!).toLocaleString()}` : "Original"}
+                  </span>
+                </div>
+                <p className="text-sm text-white break-words">{data.currentContent}</p>
+              </div>
+
+              {/* Edit History */}
+              {data.editHistory.length > 0 && (
+                <>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Previous Versions</div>
+                  {data.editHistory.map((edit: EditHistoryItem, index: number) => (
+                    <div key={index} className="p-3 bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-400">Version {edit.version}</span>
+                        <span className="text-xs text-gray-500">{new Date(edit.editedAt).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm text-gray-300 break-words">{edit.content}</p>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {data.editHistory.length === 0 && !data.isEdited && (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  This message has never been edited
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
+  const [showHidden, setShowHidden] = useState(false);
+  const [editHistoryMessageId, setEditHistoryMessageId] = useState<string | null>(null);
   const { showToast } = useToast();
 
   const fetchMessages = useCallback(async () => {
@@ -76,6 +178,20 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
     }
   };
 
+  const handleToggleVisibility = async (messageId: string, currentlyHidden: boolean) => {
+    const response = await setMessageVisibility(accessToken, messageId, !currentlyHidden);
+    if (response.success) {
+      setMessages((prev) =>
+        prev.map((m) => (m._id === messageId ? { ...m, isHidden: !currentlyHidden } : m))
+      );
+      showToast(`Message ${!currentlyHidden ? "hidden" : "shown"}`, "success");
+    } else {
+      showToast(response.error?.message || "Failed to update message visibility", "error");
+    }
+  };
+
+  const filteredMessages = showHidden ? messages : messages.filter((m: Message) => !(m as any).isHidden);
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-gray-800 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
@@ -86,9 +202,23 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
               Between {conversation.participants.map((p) => p.userName || "Unknown").join(" & ")}
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHidden(!showHidden)}
+              className={`px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${
+                showHidden
+                  ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                  : "bg-gray-700 text-gray-400 hover:text-white"
+              }`}
+              title={showHidden ? "Hide hidden messages" : "Show hidden messages"}
+            >
+              {showHidden ? <Eye size={14} /> : <EyeOff size={14} />}
+              {showHidden ? "Showing All" : "Show Hidden"}
+            </button>
+            <button onClick={onClose} className="text-gray-400 hover:text-white">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -96,70 +226,111 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">No messages in this conversation</div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              {messages.length === 0 ? "No messages in this conversation" : "No visible messages (toggle 'Show Hidden' to see hidden messages)"}
+            </div>
           ) : (
             <div className="space-y-3">
-              {messages.map((message) => (
-                <div
-                  key={message._id}
-                  className={`p-3 rounded-lg ${
-                    message.flagged ? "bg-red-500/10 border border-red-500/20" : "bg-gray-700/50"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-white">
-                          {(message.senderId as any)?.userName || "Unknown"}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(message.createdAt).toLocaleString()}
-                        </span>
-                        {message.flagged && (
-                          <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">
-                            Flagged
+              {filteredMessages.map((message: Message) => {
+                const isHidden = (message as any).isHidden;
+                const isEdited = (message as any).isEdited;
+                return (
+                  <div
+                    key={message._id}
+                    className={`p-3 rounded-lg ${
+                      isHidden
+                        ? "bg-purple-500/10 border border-purple-500/20 opacity-60"
+                        : message.flagged
+                        ? "bg-red-500/10 border border-red-500/20"
+                        : "bg-gray-700/50"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-white">
+                            {(message.senderId as any)?.userName || "Unknown"}
                           </span>
-                        )}
+                          <span className="text-xs text-gray-500">
+                            {new Date(message.createdAt).toLocaleString()}
+                          </span>
+                          {message.flagged && (
+                            <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">
+                              Flagged
+                            </span>
+                          )}
+                          {isHidden && (
+                            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">
+                              Hidden
+                            </span>
+                          )}
+                          {isEdited && (
+                            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded flex items-center gap-1">
+                              <Pencil size={10} />
+                              Edited
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1">
+                          <span className="text-xs text-gray-400 uppercase">
+                            [{message.messageType}]
+                          </span>
+                          {message.encryptedContent ? (
+                            <p className="text-sm text-gray-300 mt-1 break-all font-mono text-xs">
+                              [Encrypted content]
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-500 italic mt-1">
+                              Content not available (metadata only)
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="mt-1">
-                        <span className="text-xs text-gray-400 uppercase">
-                          [{message.messageType}]
-                        </span>
-                        {message.encryptedContent ? (
-                          <p className="text-sm text-gray-300 mt-1 break-all font-mono text-xs">
-                            [Encrypted content]
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic mt-1">
-                            Content not available (metadata only)
-                          </p>
+                      <div className="flex items-center gap-1">
+                        {isEdited && (
+                          <button
+                            onClick={() => setEditHistoryMessageId(message._id)}
+                            className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
+                            title="View Edit History"
+                          >
+                            <History size={16} />
+                          </button>
                         )}
+                        <button
+                          onClick={() => handleToggleVisibility(message._id, isHidden)}
+                          className={`p-1.5 rounded transition-colors ${
+                            isHidden
+                              ? "text-purple-400 hover:bg-purple-500/20"
+                              : "text-gray-400 hover:bg-gray-600"
+                          }`}
+                          title={isHidden ? "Show Message" : "Hide Message"}
+                        >
+                          {isHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
+                        <button
+                          onClick={() => handleFlagMessage(message._id, !message.flagged)}
+                          className={`p-1.5 rounded transition-colors ${
+                            message.flagged
+                              ? "text-red-400 hover:bg-red-500/20"
+                              : "text-gray-400 hover:bg-gray-600"
+                          }`}
+                          title={message.flagged ? "Unflag" : "Flag"}
+                        >
+                          <Flag size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMessage(message._id)}
+                          className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleFlagMessage(message._id, !message.flagged)}
-                        className={`p-1.5 rounded transition-colors ${
-                          message.flagged
-                            ? "text-red-400 hover:bg-red-500/20"
-                            : "text-gray-400 hover:bg-gray-600"
-                        }`}
-                        title={message.flagged ? "Unflag" : "Flag"}
-                      >
-                        <Flag size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMessage(message._id)}
-                        className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -188,6 +359,15 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
           </div>
         )}
       </div>
+
+      {/* Edit History Modal */}
+      {editHistoryMessageId && (
+        <EditHistoryModal
+          messageId={editHistoryMessageId}
+          accessToken={accessToken}
+          onClose={() => setEditHistoryMessageId(null)}
+        />
+      )}
     </div>
   );
 }

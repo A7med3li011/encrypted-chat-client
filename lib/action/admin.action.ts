@@ -298,6 +298,17 @@ export async function deleteMessage(token: string, messageId: string) {
   });
 }
 
+export async function setMessageVisibility(token: string, messageId: string, isHidden: boolean) {
+  return apiCall(`/admin/messages/${messageId}/visibility`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ isHidden }),
+  });
+}
+
+export async function getMessageEditHistory(token: string, messageId: string) {
+  return apiCall(`/admin/messages/${messageId}/edit-history`, token);
+}
+
 // ============ AUDIT LOGS ============
 
 interface GetAuditLogsParams {

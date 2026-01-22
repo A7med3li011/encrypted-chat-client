@@ -19,6 +19,8 @@ export interface Message {
   deliveredAt?: string;
   createdAt: string;
   updatedAt: string;
+  isEdited?: boolean;
+  editedAt?: string;
 }
 
 export interface SendMessageData {

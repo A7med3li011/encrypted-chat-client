@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { Button } from "@/components/ui/Button";
 import { MessageSquare, User, QrCode, ScanLine, LogOut, Shield } from "lucide-react";
-import logoImage from "../../public/assets/bond_logo.png";
+const logoImage = "/assets/bond_logo.jpeg";
 import {
   handleLogout as logoutAction,
   handlegetProfile,

@@ -256,6 +256,12 @@ export async function deleteConversation(token: string, conversationId: string) 
   });
 }
 
+export async function clearConversationMessages(token: string, conversationId: string) {
+  return apiCall(`/admin/conversations/${conversationId}/messages`, token, {
+    method: "DELETE",
+  });
+}
+
 // ============ MESSAGE MANAGEMENT ============
 
 export async function getConversationMessages(

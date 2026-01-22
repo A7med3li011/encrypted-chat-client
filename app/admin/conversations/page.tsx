@@ -6,6 +6,7 @@ import { useAdminStore, Conversation, Message } from "@/lib/store/useAdminStore"
 import {
   getConversations,
   deleteConversation,
+  clearConversationMessages,
   getConversationMessages,
   flagMessage,
   deleteMessage,
@@ -22,6 +23,7 @@ import {
   Flag,
   AlertTriangle,
   User,
+  Eraser,
 } from "lucide-react";
 
 interface MessagesModalProps {
@@ -206,6 +208,7 @@ export default function ConversationsPage() {
   const [page, setPage] = useState(1);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [deletingConversation, setDeletingConversation] = useState<Conversation | null>(null);
+  const [clearingConversation, setClearingConversation] = useState<Conversation | null>(null);
 
   const fetchConversations = useCallback(async () => {
     if (!accessToken) return;
@@ -247,6 +250,19 @@ export default function ConversationsPage() {
       showToast(response.error?.message || "Failed to delete conversation", "error");
     }
     setDeletingConversation(null);
+  };
+
+  const handleClearMessages = async (conversationId: string) => {
+    if (!accessToken) return;
+
+    const response = await clearConversationMessages(accessToken, conversationId);
+    if (response.success) {
+      showToast(response.message || "Messages cleared successfully", "success");
+      fetchConversations(); // Refresh to update last message info
+    } else {
+      showToast(response.error?.message || "Failed to clear messages", "error");
+    }
+    setClearingConversation(null);
   };
 
   return (
@@ -345,6 +361,13 @@ export default function ConversationsPage() {
                       <Eye size={18} />
                     </button>
                     <button
+                      onClick={() => setClearingConversation(conversation)}
+                      className="p-2 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 rounded-lg transition-colors"
+                      title="Clear Messages"
+                    >
+                      <Eraser size={18} />
+                    </button>
+                    <button
                       onClick={() => setDeletingConversation(conversation)}
                       className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                       title="Delete Conversation"
@@ -422,6 +445,42 @@ export default function ConversationsPage() {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Messages Confirmation */}
+      {clearingConversation && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-xl w-full max-w-sm p-5">
+            <div className="flex items-center gap-3 text-yellow-400 mb-4">
+              <Eraser size={24} />
+              <h3 className="text-lg font-semibold text-white">Clear Messages</h3>
+            </div>
+            <p className="text-gray-400">
+              Are you sure you want to clear all messages in this conversation? The conversation will
+              remain but all messages will be permanently deleted.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Conversation between:{" "}
+              <span className="text-white">
+                {clearingConversation.participants.map((p) => p.userName || "Unknown").join(" & ")}
+              </span>
+            </p>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setClearingConversation(null)}
+                className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleClearMessages(clearingConversation._id)}
+                className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                Clear Messages
               </button>
             </div>
           </div>

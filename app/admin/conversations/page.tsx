@@ -14,6 +14,7 @@ import {
   getMessageEditHistory,
   decryptMessage,
   unhideAllMessages,
+  hideAllMessages,
 } from "@/lib/action/admin.action";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -139,11 +140,11 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
-  const [showHidden, setShowHidden] = useState(false);
   const [editHistoryMessageId, setEditHistoryMessageId] = useState<string | null>(null);
   const [decryptedMessages, setDecryptedMessages] = useState<Record<string, string>>({});
   const [decryptingMessageId, setDecryptingMessageId] = useState<string | null>(null);
   const [unhidingAll, setUnhidingAll] = useState(false);
+  const [hidingAll, setHidingAll] = useState(false);
   const { showToast } = useToast();
 
   const fetchMessages = useCallback(async () => {
@@ -230,8 +231,32 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
     setUnhidingAll(false);
   };
 
-  const hiddenCount = messages.filter((m: Message) => m.isHidden).length;
-  const filteredMessages = showHidden ? messages : messages.filter((m: Message) => !m.isHidden);
+  const handleHideAllMessages = async () => {
+    console.log("Hide All clicked, conversation ID:", conversation._id);
+    setHidingAll(true);
+    try {
+      const response = await hideAllMessages(accessToken, conversation._id);
+      console.log("Hide All response:", response);
+      if (response.success) {
+        // Update local state to mark all messages as hidden
+        setMessages((prev: Message[]) =>
+          prev.map((m: Message) => ({ ...m, isHidden: true, hiddenAt: new Date().toISOString() }))
+        );
+        showToast(response.message || "All messages hidden", "success");
+      } else {
+        showToast(response.error?.message || "Failed to hide messages", "error");
+      }
+    } catch (error) {
+      console.error("Hide All error:", error);
+      showToast("Failed to hide messages", "error");
+    }
+    setHidingAll(false);
+  };
+
+  // Treat undefined isHidden as hidden (for old messages before the field was added)
+  const isMessageHidden = (m: Message) => m.isHidden !== false;
+  const hiddenCount = messages.filter(isMessageHidden).length;
+  const visibleCount = messages.length - hiddenCount;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -245,16 +270,17 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowHidden(!showHidden)}
-              className={`px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${
-                showHidden
-                  ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                  : "bg-gray-700 text-gray-400 hover:text-white"
-              }`}
-              title={showHidden ? "Hide hidden messages from view" : "Show hidden messages in view"}
+              onClick={handleHideAllMessages}
+              disabled={hidingAll}
+              className="px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 disabled:opacity-50"
+              title="Hide all messages in this conversation"
             >
-              {showHidden ? <Eye size={14} /> : <EyeOff size={14} />}
-              {showHidden ? "Showing All" : "Show Hidden"}
+              {hidingAll ? (
+                <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <EyeOff size={14} />
+              )}
+              Hide All ({visibleCount})
             </button>
             <button
               onClick={handleUnhideAllMessages}
@@ -280,14 +306,14 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
-          ) : filteredMessages.length === 0 ? (
+          ) : messages.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              {messages.length === 0 ? "No messages in this conversation" : "No visible messages (toggle 'Show Hidden' to see hidden messages)"}
+              No messages in this conversation
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredMessages.map((message: Message) => {
-                const isHidden = message.isHidden;
+              {messages.map((message: Message) => {
+                const isHidden = isMessageHidden(message);
                 const isEdited = message.isEdited;
                 return (
                   <div

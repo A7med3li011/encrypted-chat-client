@@ -129,10 +129,27 @@ export async function updateUser(
   });
 }
 
-export async function deleteUser(token: string, userId: string) {
-  return apiCall(`/admin/users/${userId}`, token, {
+export async function deleteUser(token: string, userId: string, permanent: boolean = false) {
+  const query = permanent ? "?permanent=true" : "";
+  return apiCall(`/admin/users/${userId}${query}`, token, {
     method: "DELETE",
   });
+}
+
+export async function restoreUser(token: string, userId: string) {
+  return apiCall(`/admin/users/${userId}/restore`, token, {
+    method: "PATCH",
+  });
+}
+
+export async function getDeletedUsers(token: string, params: GetUsersParams = {}) {
+  const searchParams = new URLSearchParams();
+  if (params.page) searchParams.set("page", params.page.toString());
+  if (params.limit) searchParams.set("limit", params.limit.toString());
+  if (params.search) searchParams.set("search", params.search);
+
+  const query = searchParams.toString();
+  return apiCall(`/admin/users-deleted${query ? `?${query}` : ""}`, token);
 }
 
 export async function activateUser(token: string, userId: string) {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { ToastProvider } from "@/components/ui/Toast";
 import {
   LayoutDashboard,
   Users,
@@ -132,7 +133,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <ToastProvider>
+      <div className="min-h-screen bg-gray-900 flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -244,6 +246,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Page content */}
         <main className="flex-1 p-4 lg:p-6 overflow-auto">{children}</main>
       </div>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

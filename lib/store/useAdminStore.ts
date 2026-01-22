@@ -9,6 +9,9 @@ export interface User {
   permissions?: string[];
   managedUsers?: User[];
   isActive: boolean;
+  isDeleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
   profilePic?: string;
   bio?: string;
   location?: string;
@@ -71,6 +74,7 @@ export interface SystemStats {
     total: number;
     active: number;
     inactive: number;
+    deleted: number;
     admins: number;
     subadmins: number;
     regularUsers: number;
@@ -107,6 +111,11 @@ interface AdminState {
   usersPagination: Pagination | null;
   selectedUser: User | null;
   usersLoading: boolean;
+
+  // Deleted Users
+  deletedUsers: User[];
+  deletedUsersPagination: Pagination | null;
+  deletedUsersLoading: boolean;
 
   // Subadmins
   subadmins: User[];
@@ -147,6 +156,10 @@ interface AdminState {
   updateUserInList: (user: User) => void;
   removeUserFromList: (userId: string) => void;
 
+  setDeletedUsers: (users: User[], pagination: Pagination) => void;
+  setDeletedUsersLoading: (loading: boolean) => void;
+  removeDeletedUserFromList: (userId: string) => void;
+
   setSubadmins: (subadmins: User[], pagination: Pagination) => void;
   setSubadminsLoading: (loading: boolean) => void;
   updateSubadminInList: (subadmin: User) => void;
@@ -183,6 +196,10 @@ const initialState = {
   usersPagination: null,
   selectedUser: null,
   usersLoading: false,
+
+  deletedUsers: [],
+  deletedUsersPagination: null,
+  deletedUsersLoading: false,
 
   subadmins: [],
   subadminsPagination: null,
@@ -227,6 +244,14 @@ export const useAdminStore = create<AdminState>((set) => ({
     set((state) => ({
       users: state.users.filter((u) => u._id !== userId),
       selectedUser: state.selectedUser?._id === userId ? null : state.selectedUser,
+    })),
+
+  // Deleted Users
+  setDeletedUsers: (users, pagination) => set({ deletedUsers: users, deletedUsersPagination: pagination }),
+  setDeletedUsersLoading: (loading) => set({ deletedUsersLoading: loading }),
+  removeDeletedUserFromList: (userId) =>
+    set((state) => ({
+      deletedUsers: state.deletedUsers.filter((u) => u._id !== userId),
     })),
 
   // Subadmins

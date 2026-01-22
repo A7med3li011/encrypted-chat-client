@@ -10,11 +10,7 @@ import {
   getConversationMessages,
   flagMessage,
   deleteMessage,
-  setMessageVisibility,
   getMessageEditHistory,
-  decryptMessage,
-  unhideAllMessages,
-  hideAllMessages,
 } from "@/lib/action/admin.action";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -25,7 +21,6 @@ import {
   ChevronRight,
   X,
   Eye,
-  EyeOff,
   Flag,
   AlertTriangle,
   User,
@@ -33,6 +28,7 @@ import {
   History,
   Pencil,
 } from "lucide-react";
+// Note: Eye is still used for "View Messages" button in conversation list
 
 interface MessagesModalProps {
   conversation: Conversation;
@@ -141,10 +137,6 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
   const [editHistoryMessageId, setEditHistoryMessageId] = useState<string | null>(null);
-  const [decryptedMessages, setDecryptedMessages] = useState<Record<string, string>>({});
-  const [decryptingMessageId, setDecryptingMessageId] = useState<string | null>(null);
-  const [unhidingAll, setUnhidingAll] = useState(false);
-  const [hidingAll, setHidingAll] = useState(false);
   const { showToast } = useToast();
 
   const fetchMessages = useCallback(async () => {
@@ -184,76 +176,6 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
     }
   };
 
-  const handleToggleDecrypt = async (messageId: string) => {
-    // If already decrypted, hide it (remove from decrypted state)
-    if (decryptedMessages[messageId]) {
-      setDecryptedMessages((prev: Record<string, string>) => {
-        const newState = { ...prev };
-        delete newState[messageId];
-        return newState;
-      });
-      return;
-    }
-
-    // Decrypt the message
-    setDecryptingMessageId(messageId);
-    const response = await decryptMessage(accessToken, messageId);
-    if (response.success && response.data) {
-      setDecryptedMessages((prev: Record<string, string>) => ({
-        ...prev,
-        [messageId]: (response.data as any).content,
-      }));
-    } else {
-      showToast(response.error?.message || "Failed to decrypt message", "error");
-    }
-    setDecryptingMessageId(null);
-  };
-
-  const handleUnhideAllMessages = async () => {
-    console.log("Unhide All clicked, conversation ID:", conversation._id);
-    setUnhidingAll(true);
-    try {
-      const response = await unhideAllMessages(accessToken, conversation._id);
-      console.log("Unhide All response:", response);
-      if (response.success) {
-        showToast(response.message || "All messages unhidden", "success");
-        // Refetch messages to get updated isHidden state from server
-        await fetchMessages();
-      } else {
-        showToast(response.error?.message || "Failed to unhide messages", "error");
-      }
-    } catch (error) {
-      console.error("Unhide All error:", error);
-      showToast("Failed to unhide messages", "error");
-    }
-    setUnhidingAll(false);
-  };
-
-  const handleHideAllMessages = async () => {
-    console.log("Hide All clicked, conversation ID:", conversation._id);
-    setHidingAll(true);
-    try {
-      const response = await hideAllMessages(accessToken, conversation._id);
-      console.log("Hide All response:", response);
-      if (response.success) {
-        showToast(response.message || "All messages hidden", "success");
-        // Refetch messages to get updated isHidden state from server
-        await fetchMessages();
-      } else {
-        showToast(response.error?.message || "Failed to hide messages", "error");
-      }
-    } catch (error) {
-      console.error("Hide All error:", error);
-      showToast("Failed to hide messages", "error");
-    }
-    setHidingAll(false);
-  };
-
-  // Message is hidden if isHidden is explicitly true (default false from schema means visible)
-  const isMessageHidden = (m: Message) => m.isHidden === true;
-  const hiddenCount = messages.filter(isMessageHidden).length;
-  const visibleCount = messages.length - hiddenCount;
-
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-gray-800 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
@@ -264,37 +186,9 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
               Between {conversation.participants.map((p) => p.userName || "Unknown").join(" & ")}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleHideAllMessages}
-              disabled={hidingAll}
-              className="px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 disabled:opacity-50"
-              title="Hide all messages in this conversation"
-            >
-              {hidingAll ? (
-                <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <EyeOff size={14} />
-              )}
-              Hide All ({visibleCount})
-            </button>
-            <button
-              onClick={handleUnhideAllMessages}
-              disabled={unhidingAll}
-              className="px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 disabled:opacity-50"
-              title="Unhide all hidden messages in this conversation"
-            >
-              {unhidingAll ? (
-                <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Eye size={14} />
-              )}
-              Unhide All ({hiddenCount})
-            </button>
-            <button onClick={onClose} className="text-gray-400 hover:text-white">
-              <X size={20} />
-            </button>
-          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <X size={20} />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -309,15 +203,12 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
           ) : (
             <div className="space-y-3">
               {messages.map((message: Message) => {
-                const isHidden = isMessageHidden(message);
                 const isEdited = message.isEdited;
                 return (
                   <div
                     key={message._id}
                     className={`p-3 rounded-lg ${
-                      isHidden
-                        ? "bg-purple-500/10 border border-purple-500/20 opacity-60"
-                        : message.flagged
+                      message.flagged
                         ? "bg-red-500/10 border border-red-500/20"
                         : "bg-gray-700/50"
                     }`}
@@ -336,11 +227,6 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
                               Flagged
                             </span>
                           )}
-                          {isHidden && (
-                            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">
-                              Hidden
-                            </span>
-                          )}
                           {isEdited && (
                             <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded flex items-center gap-1">
                               <Pencil size={10} />
@@ -352,23 +238,14 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
                           <span className="text-xs text-gray-400 uppercase">
                             [{message.messageType}]
                           </span>
-                          {/* Show decrypted content from server if available (unhidden messages) */}
+                          {/* Messages are decrypted on the server for admin viewing */}
                           {message.decryptedContent ? (
                             <p className="text-sm text-gray-200 mt-1 break-words">
                               {message.decryptedContent}
                             </p>
-                          ) : decryptedMessages[message._id] ? (
-                            /* Show manually decrypted content (for hidden messages decrypted via button) */
-                            <p className="text-sm text-gray-200 mt-1 break-words">
-                              {decryptedMessages[message._id]}
-                            </p>
-                          ) : message.encryptedContent ? (
-                            <p className="text-sm text-gray-500 italic mt-1">
-                              [Encrypted content - click eye to decrypt]
-                            </p>
                           ) : (
                             <p className="text-sm text-gray-500 italic mt-1">
-                              Content not available (metadata only)
+                              [Decryption failed]
                             </p>
                           )}
                         </div>
@@ -383,24 +260,6 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
                             <History size={16} />
                           </button>
                         )}
-                        <button
-                          onClick={() => handleToggleDecrypt(message._id)}
-                          disabled={decryptingMessageId === message._id}
-                          className={`p-1.5 rounded transition-colors ${
-                            decryptedMessages[message._id]
-                              ? "text-green-400 hover:bg-green-500/20"
-                              : "text-gray-400 hover:bg-gray-600"
-                          } ${decryptingMessageId === message._id ? "opacity-50" : ""}`}
-                          title={decryptedMessages[message._id] ? "Hide Content" : "Decrypt & Show Content"}
-                        >
-                          {decryptingMessageId === message._id ? (
-                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                          ) : decryptedMessages[message._id] ? (
-                            <EyeOff size={16} />
-                          ) : (
-                            <Eye size={16} />
-                          )}
-                        </button>
                         <button
                           onClick={() => handleFlagMessage(message._id, !message.flagged)}
                           className={`p-1.5 rounded transition-colors ${

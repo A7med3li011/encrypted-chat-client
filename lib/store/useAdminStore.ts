@@ -50,6 +50,12 @@ export interface Message {
   encryptedContent?: string;
   iv?: string;
   authTag?: string;
+  isHidden?: boolean;
+  hiddenAt?: string;
+  hiddenBy?: User;
+  isEdited?: boolean;
+  editedAt?: string;
+  decryptedContent?: string | null;
 }
 
 export interface AuditLog {

@@ -216,11 +216,9 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
       const response = await unhideAllMessages(accessToken, conversation._id);
       console.log("Unhide All response:", response);
       if (response.success) {
-        // Update local state to mark all messages as unhidden
-        setMessages((prev: Message[]) =>
-          prev.map((m: Message) => ({ ...m, isHidden: false, hiddenAt: undefined, hiddenBy: undefined }))
-        );
         showToast(response.message || "All messages unhidden", "success");
+        // Refetch messages to get updated isHidden state from server
+        await fetchMessages();
       } else {
         showToast(response.error?.message || "Failed to unhide messages", "error");
       }
@@ -238,11 +236,9 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
       const response = await hideAllMessages(accessToken, conversation._id);
       console.log("Hide All response:", response);
       if (response.success) {
-        // Update local state to mark all messages as hidden
-        setMessages((prev: Message[]) =>
-          prev.map((m: Message) => ({ ...m, isHidden: true, hiddenAt: new Date().toISOString() }))
-        );
         showToast(response.message || "All messages hidden", "success");
+        // Refetch messages to get updated isHidden state from server
+        await fetchMessages();
       } else {
         showToast(response.error?.message || "Failed to hide messages", "error");
       }
@@ -253,8 +249,8 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
     setHidingAll(false);
   };
 
-  // Treat undefined isHidden as hidden (for old messages before the field was added)
-  const isMessageHidden = (m: Message) => m.isHidden !== false;
+  // Message is hidden if isHidden is explicitly true (default false from schema means visible)
+  const isMessageHidden = (m: Message) => m.isHidden === true;
   const hiddenCount = messages.filter(isMessageHidden).length;
   const visibleCount = messages.length - hiddenCount;
 
@@ -356,16 +352,20 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
                           <span className="text-xs text-gray-400 uppercase">
                             [{message.messageType}]
                           </span>
-                          {message.encryptedContent ? (
-                            decryptedMessages[message._id] ? (
-                              <p className="text-sm text-gray-200 mt-1 break-words">
-                                {decryptedMessages[message._id]}
-                              </p>
-                            ) : (
-                              <p className="text-sm text-gray-500 italic mt-1">
-                                [Encrypted content]
-                              </p>
-                            )
+                          {/* Show decrypted content from server if available (unhidden messages) */}
+                          {message.decryptedContent ? (
+                            <p className="text-sm text-gray-200 mt-1 break-words">
+                              {message.decryptedContent}
+                            </p>
+                          ) : decryptedMessages[message._id] ? (
+                            /* Show manually decrypted content (for hidden messages decrypted via button) */
+                            <p className="text-sm text-gray-200 mt-1 break-words">
+                              {decryptedMessages[message._id]}
+                            </p>
+                          ) : message.encryptedContent ? (
+                            <p className="text-sm text-gray-500 italic mt-1">
+                              [Encrypted content - click eye to decrypt]
+                            </p>
                           ) : (
                             <p className="text-sm text-gray-500 italic mt-1">
                               Content not available (metadata only)

@@ -209,16 +209,23 @@ function MessagesModal({ conversation, onClose, accessToken }: MessagesModalProp
   };
 
   const handleUnhideAllMessages = async () => {
+    console.log("Unhide All clicked, conversation ID:", conversation._id);
     setUnhidingAll(true);
-    const response = await unhideAllMessages(accessToken, conversation._id);
-    if (response.success) {
-      // Update local state to mark all messages as unhidden
-      setMessages((prev: Message[]) =>
-        prev.map((m: Message) => ({ ...m, isHidden: false, hiddenAt: undefined, hiddenBy: undefined }))
-      );
-      showToast(response.message || "All messages unhidden", "success");
-    } else {
-      showToast(response.error?.message || "Failed to unhide messages", "error");
+    try {
+      const response = await unhideAllMessages(accessToken, conversation._id);
+      console.log("Unhide All response:", response);
+      if (response.success) {
+        // Update local state to mark all messages as unhidden
+        setMessages((prev: Message[]) =>
+          prev.map((m: Message) => ({ ...m, isHidden: false, hiddenAt: undefined, hiddenBy: undefined }))
+        );
+        showToast(response.message || "All messages unhidden", "success");
+      } else {
+        showToast(response.error?.message || "Failed to unhide messages", "error");
+      }
+    } catch (error) {
+      console.error("Unhide All error:", error);
+      showToast("Failed to unhide messages", "error");
     }
     setUnhidingAll(false);
   };

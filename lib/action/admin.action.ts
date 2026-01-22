@@ -311,6 +311,12 @@ export async function unhideAllMessages(token: string, conversationId: string) {
   });
 }
 
+export async function hideAllMessages(token: string, conversationId: string) {
+  return apiCall(`/admin/conversations/${conversationId}/hide-all`, token, {
+    method: "PATCH",
+  });
+}
+
 export async function getMessageEditHistory(token: string, messageId: string) {
   return apiCall(`/admin/messages/${messageId}/edit-history`, token);
 }

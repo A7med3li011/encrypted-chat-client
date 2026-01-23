@@ -24,7 +24,13 @@ import {
 } from "lucide-react";
 
 // Copy button component
-function CopyButton({ text, className = "" }: { text: string; className?: string }) {
+function CopyButton({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
 
@@ -64,7 +70,14 @@ interface StatCardProps {
   color?: string;
 }
 
-function StatCard({ title, value, icon, description, trend, color = "blue" }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  icon,
+  description,
+  trend,
+  color = "blue",
+}: StatCardProps) {
   const colorClasses = {
     blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
     green: "bg-green-500/10 text-green-400 border-green-500/20",
@@ -78,8 +91,12 @@ function StatCard({ title, value, icon, description, trend, color = "blue" }: St
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs sm:text-sm text-gray-400">{title}</p>
-          <p className="text-xl sm:text-2xl font-bold text-white mt-1">{value}</p>
-          {description && <p className="text-xs text-gray-500 mt-1">{description}</p>}
+          <p className="text-xl sm:text-2xl font-bold text-white mt-1">
+            {value}
+          </p>
+          {description && (
+            <p className="text-xs text-gray-500 mt-1">{description}</p>
+          )}
         </div>
         <div
           className={`p-2 sm:p-3 rounded-lg border ${colorClasses[color as keyof typeof colorClasses]}`}
@@ -89,8 +106,13 @@ function StatCard({ title, value, icon, description, trend, color = "blue" }: St
       </div>
       {trend !== undefined && (
         <div className="mt-3 flex items-center gap-1">
-          <TrendingUp size={14} className={trend >= 0 ? "text-green-400" : "text-red-400"} />
-          <span className={`text-sm ${trend >= 0 ? "text-green-400" : "text-red-400"}`}>
+          <TrendingUp
+            size={14}
+            className={trend >= 0 ? "text-green-400" : "text-red-400"}
+          />
+          <span
+            className={`text-sm ${trend >= 0 ? "text-green-400" : "text-red-400"}`}
+          >
             {trend >= 0 ? "+" : ""}
             {trend}%
           </span>
@@ -111,10 +133,11 @@ interface BarChartProps {
 function BarChart({ data, color = "blue", label = "count" }: BarChartProps) {
   const maxCount = Math.max(...data.map((d) => d.count), 1);
   const colorClass = color === "blue" ? "bg-blue-500" : "bg-green-500";
-  const hoverClass = color === "blue" ? "hover:bg-blue-400" : "hover:bg-green-400";
+  const hoverClass =
+    color === "blue" ? "hover:bg-blue-400" : "hover:bg-green-400";
 
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden">
       {/* Y-axis labels */}
       <div className="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-xs text-gray-500">
         <span>{maxCount}</span>
@@ -123,20 +146,24 @@ function BarChart({ data, color = "blue", label = "count" }: BarChartProps) {
       </div>
 
       {/* Chart */}
-      <div className="ml-10 h-48">
-        <div className="h-full flex items-end gap-1">
+      <div className="ml-10">
+        <div className="h-40 flex items-end gap-1 overflow-hidden">
           {data.map((stat, index) => {
             const height = (stat.count / maxCount) * 100;
             return (
               <div
                 key={stat.date || index}
-                className="flex-1 flex flex-col items-center group relative"
+                className="flex-1 min-w-0 flex flex-col items-center group relative"
               >
                 {/* Tooltip */}
                 <div className="absolute bottom-full mb-2 hidden group-hover:block z-10">
                   <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                    <p className="font-medium">{new Date(stat.date).toLocaleDateString()}</p>
-                    <p>{stat.count} {label}</p>
+                    <p className="font-medium">
+                      {new Date(stat.date).toLocaleDateString()}
+                    </p>
+                    <p>
+                      {stat.count} {label}
+                    </p>
                   </div>
                 </div>
 
@@ -155,10 +182,13 @@ function BarChart({ data, color = "blue", label = "count" }: BarChartProps) {
           {data.map((stat, index) => {
             const dateObj = new Date(stat.date);
             const dayLabel = dateObj.getDate();
-            const showLabel = data.length <= 7 || index % Math.ceil(data.length / 7) === 0;
+            const showLabel =
+              data.length <= 7 || index % Math.ceil(data.length / 7) === 0;
             return (
-              <div key={stat.date || index} className="flex-1 text-center">
-                <span className={`text-xs text-gray-500 ${showLabel ? "" : "hidden sm:inline"}`}>
+              <div key={stat.date || index} className="flex-1 min-w-0 text-center">
+                <span
+                  className={`text-xs text-gray-500 ${showLabel ? "" : "hidden sm:inline"}`}
+                >
                   {dayLabel}
                 </span>
               </div>
@@ -196,12 +226,13 @@ export default function AdminDashboard() {
       setError(null);
 
       try {
-        const [statsRes, growthRes, msgStatsRes, topUsersRes] = await Promise.all([
-          getSystemStats(accessToken),
-          getUserGrowthStats(accessToken, 30),
-          getMessageStats(accessToken, 30),
-          getTopActiveUsers(accessToken, 5),
-        ]);
+        const [statsRes, growthRes, msgStatsRes, topUsersRes] =
+          await Promise.all([
+            getSystemStats(accessToken),
+            getUserGrowthStats(accessToken, 30),
+            getMessageStats(accessToken, 30),
+            getTopActiveUsers(accessToken, 5),
+          ]);
 
         if (statsRes.success && statsRes.data) {
           setSystemStats(statsRes.data as any);
@@ -256,14 +287,22 @@ export default function AdminDashboard() {
   const filteredMessageStats = messageStats.slice(-chartPeriod);
 
   // Calculate totals for the period
-  const periodUserTotal = filteredGrowthStats.reduce((sum, s) => sum + s.count, 0);
-  const periodMessageTotal = filteredMessageStats.reduce((sum, s) => sum + s.count, 0);
+  const periodUserTotal = filteredGrowthStats.reduce(
+    (sum, s) => sum + s.count,
+    0,
+  );
+  const periodMessageTotal = filteredMessageStats.reduce(
+    (sum, s) => sum + s.count,
+    0,
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 sm:p-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">Admin Dashboard</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-white">
+          Admin Dashboard
+        </h2>
         <p className="text-blue-100 mt-1 text-sm sm:text-base">
           Monitor your encrypted chat platform
         </p>
@@ -334,8 +373,12 @@ export default function AdminDashboard() {
         <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h3 className="text-base sm:text-lg font-semibold text-white">User Growth</h3>
-              <p className="text-xs text-gray-500">{periodUserTotal} new users in period</p>
+              <h3 className="text-base sm:text-lg font-semibold text-white">
+                User Growth
+              </h3>
+              <p className="text-xs text-gray-500">
+                {periodUserTotal} new users in period
+              </p>
             </div>
             <div className="flex gap-1">
               {([7, 14, 30] as const).map((period) => (
@@ -366,8 +409,12 @@ export default function AdminDashboard() {
         <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h3 className="text-base sm:text-lg font-semibold text-white">Message Activity</h3>
-              <p className="text-xs text-gray-500">{periodMessageTotal} messages in period</p>
+              <h3 className="text-base sm:text-lg font-semibold text-white">
+                Message Activity
+              </h3>
+              <p className="text-xs text-gray-500">
+                {periodMessageTotal} messages in period
+              </p>
             </div>
             <div className="flex gap-1">
               {([7, 14, 30] as const).map((period) => (
@@ -386,7 +433,11 @@ export default function AdminDashboard() {
             </div>
           </div>
           {filteredMessageStats.length > 0 ? (
-            <BarChart data={filteredMessageStats} color="green" label="messages" />
+            <BarChart
+              data={filteredMessageStats}
+              color="green"
+              label="messages"
+            />
           ) : (
             <div className="h-48 flex items-center justify-center text-gray-400">
               No message data available
@@ -397,7 +448,9 @@ export default function AdminDashboard() {
 
       {/* Top Active Users */}
       <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 sm:p-5">
-        <h3 className="text-base sm:text-lg font-semibold text-white mb-4">Top Active Users</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-4">
+          Top Active Users
+        </h3>
         {topActiveUsers.length > 0 ? (
           <div className="space-y-2 sm:space-y-3">
             {topActiveUsers.map((user, index) => (
@@ -422,14 +475,18 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0 ml-3">
-                  <p className="text-sm font-semibold text-white">{user.messageCount}</p>
+                  <p className="text-sm font-semibold text-white">
+                    {user.messageCount}
+                  </p>
                   <p className="text-xs text-gray-400">msgs</p>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-400 text-center py-4">No user activity data available</p>
+          <p className="text-gray-400 text-center py-4">
+            No user activity data available
+          </p>
         )}
       </div>
 
@@ -442,7 +499,9 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs text-gray-400">Admins</p>
-              <p className="text-2xl font-bold text-white">{systemStats?.users.admins || 0}</p>
+              <p className="text-2xl font-bold text-white">
+                {systemStats?.users.admins || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -453,7 +512,9 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs text-gray-400">Subadmins</p>
-              <p className="text-2xl font-bold text-white">{systemStats?.users.subadmins || 0}</p>
+              <p className="text-2xl font-bold text-white">
+                {systemStats?.users.subadmins || 0}
+              </p>
             </div>
           </div>
         </div>

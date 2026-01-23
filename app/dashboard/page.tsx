@@ -4,7 +4,14 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { Button } from "@/components/ui/Button";
-import { MessageSquare, User, QrCode, ScanLine, LogOut, Shield } from "lucide-react";
+import {
+  MessageSquare,
+  User,
+  QrCode,
+  ScanLine,
+  LogOut,
+  Shield,
+} from "lucide-react";
 const logoImage = "/assets/bond_logo.jpeg";
 import {
   handleLogout as logoutAction,
@@ -22,7 +29,8 @@ interface NavItem {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, clearAuth, accessToken, updateUser } = useAuthStore();
+  const { user, isAuthenticated, clearAuth, accessToken, updateUser } =
+    useAuthStore();
   const { showToast } = useToast();
 
   const [showQrCode, setShowQrCode] = useState(false);

@@ -1,9 +1,7 @@
 // Client-side chat functions - no longer using server actions with cookies
-"use server"
-
+"use server";
 
 // Helper to get token from store (for use in client components)
-
 
 export async function getMessages(
   conversationId: string,
@@ -11,7 +9,7 @@ export async function getMessages(
   limit = 10,
   token?: string,
 ) {
-  const accessToken = token 
+  const accessToken = token;
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/messages/conversation/${conversationId}?page=${page}&limit=${limit}`,
@@ -64,7 +62,7 @@ export async function sendMessage(
   content: string,
   token?: string,
 ) {
-  const accessToken = token 
+  const accessToken = token;
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/messages`,
@@ -141,7 +139,62 @@ export async function editMessage(
         success: false,
         message: result.message,
         error: {
-          message: result.message || `Failed to edit message: ${response.statusText}`,
+          message:
+            result.message || `Failed to edit message: ${response.statusText}`,
+          status: response.status,
+        },
+      };
+    }
+
+    const result = await response.json();
+
+    return {
+      data: result.data || {},
+      message: result.message,
+      success: true,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
+        status: 500,
+      },
+    };
+  }
+}
+export async function deleteMessage(
+  messageId: string,
+
+  token: string,
+) {
+  const accessToken = token;
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/messages/${messageId}`,
+      {
+        method: "DELETE",
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const result = await response.json();
+
+      return {
+        data: null,
+        success: false,
+        message: result.message,
+        error: {
+          message:
+            result.message ||
+            `Failed to delete message: ${response.statusText}`,
           status: response.status,
         },
       };

@@ -13,6 +13,7 @@ interface ChatState {
   addMessage: (message: Message) => void;
   prependMessages: (messages: Message[]) => void;
   updateMessage: (messageId: string, updates: Partial<Message>) => void;
+  removeMessage: (messageId: string) => void;
   setUnreadCount: (count: number) => void;
   clearChat: () => void;
 }
@@ -52,6 +53,10 @@ export const useChatStore = create<ChatState>((set) => ({
       messages: state.messages.map((msg) =>
         msg._id === messageId ? { ...msg, ...updates } : msg
       ),
+    })),
+  removeMessage: (messageId) =>
+    set((state) => ({
+      messages: state.messages.filter((msg) => msg._id !== messageId),
     })),
   setUnreadCount: (count) => set({ unreadCount: count }),
   clearChat: () =>

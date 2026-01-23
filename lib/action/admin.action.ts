@@ -26,7 +26,7 @@ interface PaginatedResponse<T> {
 async function apiCall<T>(
   endpoint: string,
   token: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<ActionResponse<T>> {
   try {
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -40,6 +40,7 @@ async function apiCall<T>(
 
     const result = await response.json();
 
+    console.log(result, "zcxxzc");
     if (!response.ok) {
       return {
         data: null,
@@ -63,7 +64,8 @@ async function apiCall<T>(
       data: null,
       success: false,
       error: {
-        message: err instanceof Error ? err.message : "An unknown error occurred",
+        message:
+          err instanceof Error ? err.message : "An unknown error occurred",
         status: 500,
       },
     };
@@ -108,7 +110,8 @@ export async function getUsers(token: string, params: GetUsersParams = {}) {
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
   if (params.search) searchParams.set("search", params.search);
   if (params.role) searchParams.set("role", params.role);
-  if (params.isActive !== undefined) searchParams.set("isActive", params.isActive.toString());
+  if (params.isActive !== undefined)
+    searchParams.set("isActive", params.isActive.toString());
 
   const query = searchParams.toString();
   return apiCall(`/admin/users${query ? `?${query}` : ""}`, token);
@@ -121,7 +124,12 @@ export async function getUserById(token: string, userId: string) {
 export async function updateUser(
   token: string,
   userId: string,
-  data: { userName?: string; bio?: string; location?: string; deviceType?: string }
+  data: {
+    userName?: string;
+    bio?: string;
+    location?: string;
+    deviceType?: string;
+  },
 ) {
   return apiCall(`/admin/users/${userId}`, token, {
     method: "PATCH",
@@ -129,7 +137,11 @@ export async function updateUser(
   });
 }
 
-export async function deleteUser(token: string, userId: string, permanent: boolean = false) {
+export async function deleteUser(
+  token: string,
+  userId: string,
+  permanent: boolean = false,
+) {
   const query = permanent ? "?permanent=true" : "";
   return apiCall(`/admin/users/${userId}${query}`, token, {
     method: "DELETE",
@@ -142,7 +154,10 @@ export async function restoreUser(token: string, userId: string) {
   });
 }
 
-export async function getDeletedUsers(token: string, params: GetUsersParams = {}) {
+export async function getDeletedUsers(
+  token: string,
+  params: GetUsersParams = {},
+) {
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set("page", params.page.toString());
   if (params.limit) searchParams.set("limit", params.limit.toString());
@@ -168,7 +183,7 @@ export async function changeUserRole(
   token: string,
   userId: string,
   role: string,
-  permissions?: string[]
+  permissions?: string[],
 ) {
   return apiCall(`/admin/users/${userId}/role`, token, {
     method: "PATCH",
@@ -178,13 +193,17 @@ export async function changeUserRole(
 
 // ============ SUBADMIN MANAGEMENT ============
 
-export async function getSubadmins(token: string, page: number = 1, limit: number = 20) {
+export async function getSubadmins(
+  token: string,
+  page: number = 1,
+  limit: number = 20,
+) {
   return apiCall(`/admin/subadmins?page=${page}&limit=${limit}`, token);
 }
 
 export async function createSubadmin(
   token: string,
-  data: { userName: string; permissions?: string[]; managedUsers?: string[] }
+  data: { userName: string; permissions?: string[]; managedUsers?: string[] },
 ) {
   return apiCall("/admin/subadmins", token, {
     method: "POST",
@@ -195,7 +214,7 @@ export async function createSubadmin(
 export async function updateSubadminPermissions(
   token: string,
   subadminId: string,
-  permissions: string[]
+  permissions: string[],
 ) {
   return apiCall(`/admin/subadmins/${subadminId}/permissions`, token, {
     method: "PATCH",
@@ -206,7 +225,7 @@ export async function updateSubadminPermissions(
 export async function assignUsersToSubadmin(
   token: string,
   subadminId: string,
-  userIds: string[]
+  userIds: string[],
 ) {
   return apiCall(`/admin/subadmins/${subadminId}/assign-users`, token, {
     method: "PATCH",
@@ -234,7 +253,10 @@ interface GetConversationsParams {
   search?: string;
 }
 
-export async function getConversations(token: string, params: GetConversationsParams = {}) {
+export async function getConversations(
+  token: string,
+  params: GetConversationsParams = {},
+) {
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set("page", params.page.toString());
   if (params.limit) searchParams.set("limit", params.limit.toString());
@@ -246,17 +268,26 @@ export async function getConversations(token: string, params: GetConversationsPa
   return apiCall(`/admin/conversations${query ? `?${query}` : ""}`, token);
 }
 
-export async function getConversationById(token: string, conversationId: string) {
+export async function getConversationById(
+  token: string,
+  conversationId: string,
+) {
   return apiCall(`/admin/conversations/${conversationId}`, token);
 }
 
-export async function deleteConversation(token: string, conversationId: string) {
+export async function deleteConversation(
+  token: string,
+  conversationId: string,
+) {
   return apiCall(`/admin/conversations/${conversationId}`, token, {
     method: "DELETE",
   });
 }
 
-export async function clearConversationMessages(token: string, conversationId: string) {
+export async function clearConversationMessages(
+  token: string,
+  conversationId: string,
+) {
   return apiCall(`/admin/conversations/${conversationId}/messages`, token, {
     method: "DELETE",
   });
@@ -268,15 +299,19 @@ export async function getConversationMessages(
   token: string,
   conversationId: string,
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ) {
   return apiCall(
     `/admin/conversations/${conversationId}/messages?page=${page}&limit=${limit}`,
-    token
+    token,
   );
 }
 
-export async function getFlaggedMessages(token: string, page: number = 1, limit: number = 20) {
+export async function getFlaggedMessages(
+  token: string,
+  page: number = 1,
+  limit: number = 20,
+) {
   return apiCall(`/admin/messages/flagged?page=${page}&limit=${limit}`, token);
 }
 
@@ -284,7 +319,7 @@ export async function flagMessage(
   token: string,
   messageId: string,
   flagged: boolean,
-  flagReason?: string
+  flagReason?: string,
 ) {
   return apiCall(`/admin/messages/${messageId}/flag`, token, {
     method: "PATCH",
@@ -298,7 +333,11 @@ export async function deleteMessage(token: string, messageId: string) {
   });
 }
 
-export async function setMessageVisibility(token: string, messageId: string, isHidden: boolean) {
+export async function setMessageVisibility(
+  token: string,
+  messageId: string,
+  isHidden: boolean,
+) {
   return apiCall(`/admin/messages/${messageId}/visibility`, token, {
     method: "PATCH",
     body: JSON.stringify({ isHidden }),
@@ -337,7 +376,10 @@ interface GetAuditLogsParams {
   endDate?: string;
 }
 
-export async function getAuditLogs(token: string, params: GetAuditLogsParams = {}) {
+export async function getAuditLogs(
+  token: string,
+  params: GetAuditLogsParams = {},
+) {
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set("page", params.page.toString());
   if (params.limit) searchParams.set("limit", params.limit.toString());
@@ -355,7 +397,11 @@ export async function getAuditLogById(token: string, logId: string) {
   return apiCall(`/audit-logs/${logId}`, token);
 }
 
-export async function getUserAuditLogs(token: string, userId: string, page: number = 1) {
+export async function getUserAuditLogs(
+  token: string,
+  userId: string,
+  page: number = 1,
+) {
   return apiCall(`/audit-logs/user/${userId}?page=${page}`, token);
 }
 
